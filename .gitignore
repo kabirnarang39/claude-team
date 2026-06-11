@@ -1,0 +1,4 @@
+node_modules/
+.claude-team/
+ui/dist/
+*.db
