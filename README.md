@@ -9,7 +9,7 @@ Anton spins up a coordinated squad of specialist AI agents — planner, architec
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/kabirnarang39/claude-team)](https://github.com/kabirnarang39/claude-team/releases)
 
-> **Note:** Add a demo GIF here — record `anton` starting → `/team-dispatch` dispatching → live agent tree updating in the dashboard.
+![Anton demo — agents completing phase by phase](docs/demo.gif)
 
 ---
 
