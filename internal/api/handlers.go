@@ -30,6 +30,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 256<<10)
 	var body struct {
 		Text     string `json:"text"`
 		JiraURL  string `json:"jiraUrl"`
@@ -156,6 +157,7 @@ func (s *Server) handleRunDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleWorkflowUpload(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if s.cfg.OnWorkflowUpload == nil {
 		http.Error(w, "not configured", 500)
 		return
@@ -188,6 +190,7 @@ func (s *Server) handleWorkflowActive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleWorkflowSetActive(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 	if s.cfg.SetActiveWorkflow == nil {
 		http.Error(w, "not configured", 500)
 		return
@@ -229,6 +232,10 @@ func (s *Server) handleWorkflowRaw(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	data, err := s.cfg.GetWorkflowRaw(name)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, err.Error(), 500)
 		return
 	}
@@ -237,6 +244,7 @@ func (s *Server) handleWorkflowRaw(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleWorkflowSave(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if s.cfg.SaveWorkflow == nil {
 		http.Error(w, "not configured", 500)
 		return
@@ -274,9 +282,14 @@ func (s *Server) handleMCPRegistry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		http.Error(w, "name required", 400)
+		return
+	}
+	if s.cfg.RuntimeDir == "" {
+		http.Error(w, "not configured", 500)
 		return
 	}
 	data, err := io.ReadAll(r.Body)
@@ -284,7 +297,7 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	uploadDir := ".claude-team/uploads"
+	uploadDir := filepath.Join(s.cfg.RuntimeDir, "uploads")
 	os.MkdirAll(uploadDir, 0755)
 	path := filepath.Join(uploadDir, filepath.Base(name))
 	if err := os.WriteFile(path, data, 0644); err != nil {
@@ -311,6 +324,7 @@ func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
 // HTTP-based alternative to the MCP report tool, which is unavailable to
 // sub-agents running in Agent tool context.
 func (s *Server) handleIngestResult(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 512<<10)
 	if s.cfg.Store == nil {
 		http.Error(w, "not configured", 500)
 		return
@@ -374,6 +388,7 @@ func (s *Server) handleIngestResult(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 	var settings map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

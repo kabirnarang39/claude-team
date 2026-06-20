@@ -184,7 +184,9 @@ func (s *Store) GetRuns(limit int) ([]RunDetail, error) {
 	var runs []RunDetail
 	for rows.Next() {
 		var r RunDetail
-		rows.Scan(&r.ID, &r.WorkflowName, &r.Status, &r.StartedAt, &r.CompletedAt)
+		if err := rows.Scan(&r.ID, &r.WorkflowName, &r.Status, &r.StartedAt, &r.CompletedAt); err != nil {
+			return nil, err
+		}
 		runs = append(runs, r)
 	}
 	return runs, rows.Err()

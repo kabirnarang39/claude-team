@@ -8,9 +8,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
+	"time"
 
 	"claude-team/internal/api"
 	"claude-team/internal/mcp"
@@ -93,11 +96,17 @@ func main() {
 		},
 
 		OnWorkflowUpload: func(data []byte, name string) error {
-			path := filepath.Join(workflowsDir, name)
-			if err := os.WriteFile(path, data, 0644); err != nil {
-				return err
+			base := filepath.Base(name)
+			path := filepath.Join(workflowsDir, base)
+			abs, _ := filepath.Abs(path)
+			absDir, _ := filepath.Abs(workflowsDir)
+			if !strings.HasPrefix(abs, absDir+string(filepath.Separator)) {
+				return fmt.Errorf("invalid workflow name")
 			}
-			return nil
+			if _, err := workflow.Parse(data); err != nil {
+				return fmt.Errorf("invalid workflow: %w", err)
+			}
+			return os.WriteFile(path, data, 0644)
 		},
 
 		GetActiveWorkflow: func() ([]byte, error) {
@@ -168,14 +177,20 @@ func main() {
 		},
 
 		SaveWorkflow: func(name, yamlContent string) error {
+			base := filepath.Base(name)
+			path := filepath.Join(workflowsDir, base)
+			abs, _ := filepath.Abs(path)
+			absDir, _ := filepath.Abs(workflowsDir)
+			if !strings.HasPrefix(abs, absDir+string(filepath.Separator)) {
+				return fmt.Errorf("invalid workflow name")
+			}
 			if _, err := workflow.Parse([]byte(yamlContent)); err != nil {
 				return err
 			}
-			path := filepath.Join(workflowsDir, name)
 			if err := os.WriteFile(path, []byte(yamlContent), 0644); err != nil {
 				return err
 			}
-			msg, _ := json.Marshal(map[string]string{"type": "workflow_saved", "name": name})
+			msg, _ := json.Marshal(map[string]string{"type": "workflow_saved", "name": base})
 			hub.Broadcast(msg)
 			return nil
 		},
@@ -203,8 +218,28 @@ func main() {
 		},
 	}
 
-	srv := api.NewServer(cfg)
+	apiSrv := api.NewServer(cfg)
+
+	httpSrv := &http.Server{
+		Addr:              fmt.Sprintf("127.0.0.1:%d", *port),
+		Handler:           apiSrv.Handler(),
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
+		<-sigCh
+		log.Println("shutting down...")
+		cancel()
+		shutCtx, stop := context.WithTimeout(context.Background(), 10*time.Second)
+		defer stop()
+		httpSrv.Shutdown(shutCtx) //nolint:errcheck
+	}()
 
 	fmt.Printf("Anton running at http://localhost:%d\n", *port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), srv.Handler()))
+	if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
 }
