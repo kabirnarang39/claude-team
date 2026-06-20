@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anton</title>
+  <title>Anton — Multi-agent engineering team</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,8 +14,12 @@
 </div>
 
   <header class="hdr">
-    <span class="logo">Anton</span>
-    <span class="tagline">Multi-agent engineering team</span>
+    <div class="brand">
+      <span class="logo-icon">⚡</span>
+      <span class="logo">Anton</span>
+      <span class="logo-badge">BETA</span>
+    </div>
+    <span class="tagline">11 specialist agents · live in your browser</span>
     <select class="wf-select" id="wf-select" aria-label="Workflow">
       <option value="feature-build">feature-build</option>
       <option value="code-review">code-review</option>
@@ -52,7 +57,47 @@
         <button class="cmd-dismiss" onclick="dismissCmd()" title="Dismiss">✕</button>
       </div>
 
-      <div class="tree-wrap">
+      <div id="onboarding-card" class="onboarding-card">
+        <div class="ob-inner">
+          <div class="ob-icon">⚡</div>
+          <h2 class="ob-title">Welcome to Anton</h2>
+          <p class="ob-sub">One slash command. 11 specialists. Live in your browser.</p>
+          <div class="ob-steps">
+            <div class="ob-step">
+              <span class="ob-num">1</span>
+              <div class="ob-step-body">
+                <div class="ob-step-title">Start Anton in your project</div>
+                <code class="ob-code">anton</code>
+                <div class="ob-step-hint">Runs on <span class="ob-hl">http://localhost:3000</span> — you're already here ✓</div>
+              </div>
+            </div>
+            <div class="ob-step">
+              <span class="ob-num">2</span>
+              <div class="ob-step-body">
+                <div class="ob-step-title">Open Claude Code in the same directory</div>
+                <code class="ob-code">claude</code>
+              </div>
+            </div>
+            <div class="ob-step">
+              <span class="ob-num">3</span>
+              <div class="ob-step-body">
+                <div class="ob-step-title">Dispatch a task — watch 11 agents fire</div>
+                <code class="ob-code">/team-dispatch build user auth with JWT</code>
+                <div class="ob-step-hint">Or type a task in the sidebar and click <strong>▶ Dispatch</strong></div>
+              </div>
+            </div>
+          </div>
+          <div class="ob-footer">
+            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener">GitHub ↗</a>
+            <span class="ob-dot-sep">·</span>
+            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team#workflows" target="_blank" rel="noopener">Workflows ↗</a>
+            <span class="ob-dot-sep">·</span>
+            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team#the-agent-roles" target="_blank" rel="noopener">Agent Roles ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="tree-wrap" id="tree-wrap" style="display:none">
         <svg id="tree-svg" width="100%" aria-label="Agent execution tree"></svg>
       </div>
       <div class="active-card" id="active-card" style="display:none">

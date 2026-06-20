@@ -404,3 +404,149 @@ html,body{
   white-space:pre-wrap;
   word-break:break-word;
 }
+
+/* ── Brand header ── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.logo-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.logo {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.8px;
+}
+.logo-badge {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  padding: 1px 4px;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* ── Onboarding card ── */
+.onboarding-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+.ob-inner {
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+}
+.ob-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px var(--accent));
+}
+.ob-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+.ob-sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.ob-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+  margin-bottom: 28px;
+}
+.ob-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.ob-step:hover {
+  border-color: var(--accent);
+}
+.ob-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ob-step-body {
+  flex: 1;
+  min-width: 0;
+}
+.ob-step-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.ob-code {
+  display: block;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--accent);
+  margin-bottom: 6px;
+  user-select: all;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.ob-step-hint {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.ob-hl {
+  color: var(--green);
+}
+.ob-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.ob-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.ob-link:hover {
+  text-decoration: underline;
+}
+.ob-dot-sep {
+  color: var(--muted);
+}

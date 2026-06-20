@@ -8,6 +8,15 @@ const state = {
   workflows: [],
 }
 
+function updateOnboardingVisibility() {
+  const hasRuns = state.runs && state.runs.length > 0
+  const ob = document.getElementById('onboarding-card')
+  const tw = document.getElementById('tree-wrap')
+  if (!ob || !tw) return
+  ob.style.display = hasRuns ? 'none' : 'flex'
+  tw.style.display = hasRuns ? 'block' : 'none'
+}
+
 const NW = 150, NH = 44, GAP_X = 195, GAP_Y = 58, MX = 20, MY = 34
 
 // ── Boot ────────────────────────────────────────────────────────────────────
@@ -17,6 +26,7 @@ async function init() {
   connectWS()
   bindEvents()
   renderTreeSimple()
+  updateOnboardingVisibility()
   // Poll active run every 6s — agent results land in SQLite async
   setInterval(async () => {
     if (state.activeRun) await refreshActiveRun()
@@ -56,7 +66,7 @@ async function refreshActiveRun() {
     }
     // also refresh run list to catch status changes
     const rres = await fetch('/api/runs')
-    if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory() }
+    if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory(); updateOnboardingVisibility() }
   } catch (_) {}
 }
 
@@ -126,6 +136,7 @@ async function loadRuns() {
     document.getElementById('offline-banner').style.display = 'block'
   }
   renderRunHistory()
+  updateOnboardingVisibility()
   if (state.runs.length > 0) await loadRunDetail(state.runs[0].id)
 }
 
@@ -173,7 +184,7 @@ async function dispatch() {
   // Refresh run list to show new run immediately
   try {
     const rres = await fetch('/api/runs')
-    if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory() }
+    if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory(); updateOnboardingVisibility() }
     if (runId) await loadRunDetail(runId)
   } catch (_) {}
   showCmd(`/team-dispatch --from-browser --workflow ${workflow}`)
