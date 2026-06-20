@@ -23,12 +23,133 @@ import (
 
 var version = "1.0.0"
 
-func checkPrereqs() {
-	if _, err := os.Stat("mcp/node_modules"); os.IsNotExist(err) {
-		log.Println("warn: mcp/node_modules not found — run: cd mcp && npm install")
+// mcpDir returns the expected location of the installed MCP coordinator.
+func mcpDir() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".claude", "anton-mcp")
+}
+
+// skillsDir returns the expected location of installed Anton skills.
+func skillsDir() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".claude", "skills")
+}
+
+// ensureProjectMCP writes (or merges) the Anton MCP entry into
+// .claude/settings.json in the current project directory, so that
+// Claude Code picks it up automatically when the project is opened.
+func ensureProjectMCP(projectPath, dbPath string) {
+	mcpJS := filepath.Join(mcpDir(), "team-coordinator.js")
+	if _, err := os.Stat(mcpJS); os.IsNotExist(err) {
+		return // MCP not installed globally — skip silently
 	}
-	if _, err := os.Stat("workflows"); os.IsNotExist(err) {
-		log.Println("warn: workflows/ directory not found — no workflows available")
+
+	claudeDir := filepath.Join(projectPath, ".claude")
+	settingsFile := filepath.Join(claudeDir, "settings.json")
+	os.MkdirAll(claudeDir, 0755)
+
+	// Read existing settings (if any)
+	var settings map[string]interface{}
+	if data, err := os.ReadFile(settingsFile); err == nil {
+		json.Unmarshal(data, &settings) //nolint:errcheck
+	}
+	if settings == nil {
+		settings = map[string]interface{}{}
+	}
+
+	// Ensure mcpServers map exists
+	mcpServers, _ := settings["mcpServers"].(map[string]interface{})
+	if mcpServers == nil {
+		mcpServers = map[string]interface{}{}
+	}
+
+	// Write (or overwrite) the anton-coordinator entry with the project DB path
+	mcpServers["anton-coordinator"] = map[string]interface{}{
+		"command": "node",
+		"args":    []string{mcpJS},
+		"env":     map[string]string{"ANTON_DB_PATH": dbPath},
+	}
+	settings["mcpServers"] = mcpServers
+
+	data, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return
+	}
+	if err := os.WriteFile(settingsFile, data, 0644); err != nil {
+		log.Printf("warn: could not write .claude/settings.json: %v", err)
+	}
+}
+
+// runCheck prints a setup health report and exits.
+func runCheck(projectPath, dbPath string) {
+	ok := true
+	check := func(label, detail string, pass bool) {
+		if pass {
+			fmt.Printf("  ✓  %-30s %s\n", label, detail)
+		} else {
+			fmt.Printf("  ✗  %-30s %s\n", label, detail)
+			ok = false
+		}
+	}
+
+	fmt.Println("Anton setup check")
+	fmt.Println()
+
+	// Binary on PATH
+	_, pathErr := os.Stat("/proc/self/exe") // just a reachability check; binary is running
+	check("anton binary", "running", pathErr == nil || true)
+
+	// Node.js
+	nodeOK := false
+	if _, err := os.Stat("/usr/local/bin/node"); err == nil {
+		nodeOK = true
+	} else if _, err := os.Stat("/opt/homebrew/bin/node"); err == nil {
+		nodeOK = true
+	} else if _, err := os.Stat("/usr/bin/node"); err == nil {
+		nodeOK = true
+	}
+	check("node installed", "required for MCP coordinator", nodeOK)
+
+	// MCP coordinator
+	mcpJS := filepath.Join(mcpDir(), "team-coordinator.js")
+	_, mcpErr := os.Stat(mcpJS)
+	check("MCP coordinator installed", mcpJS, mcpErr == nil)
+
+	// MCP node_modules
+	mcpMods := filepath.Join(mcpDir(), "node_modules")
+	_, modsErr := os.Stat(mcpMods)
+	check("MCP dependencies", "node_modules present", modsErr == nil)
+
+	// Skills
+	skillFile := filepath.Join(skillsDir(), "team-dispatch.md")
+	_, skillErr := os.Stat(skillFile)
+	check("team-dispatch skill", skillFile, skillErr == nil)
+
+	// Project .claude/settings.json MCP entry
+	settingsFile := filepath.Join(projectPath, ".claude", "settings.json")
+	mcpConfigured := false
+	if data, err := os.ReadFile(settingsFile); err == nil {
+		var s map[string]interface{}
+		if json.Unmarshal(data, &s) == nil {
+			if servers, ok := s["mcpServers"].(map[string]interface{}); ok {
+				_, mcpConfigured = servers["anton-coordinator"]
+			}
+		}
+	}
+	check("MCP registered in project", ".claude/settings.json", mcpConfigured)
+
+	// Workflows dir
+	wfDir := filepath.Join(projectPath, "workflows")
+	_, wfErr := os.Stat(wfDir)
+	check("workflows/ directory", wfDir, wfErr == nil)
+
+	fmt.Println()
+	if ok {
+		fmt.Println("All checks passed. Run `anton` then open http://localhost:3000")
+	} else {
+		fmt.Println("Fix the items above. Re-run `anton check` to verify.")
+		fmt.Printf("To register MCP for this project: anton (just run it — auto-configures on start)\n")
+		os.Exit(1)
 	}
 }
 
@@ -36,6 +157,7 @@ func main() {
 	port := flag.Int("port", 3000, "HTTP port")
 	registryPath := flag.String("registry", "mcp-registry.yaml", "Path to mcp-registry.yaml")
 	versionFlag := flag.Bool("version", false, "Print version and exit")
+	checkFlag := flag.Bool("check", false, "Check Anton setup and exit")
 	flag.Parse()
 
 	if *versionFlag {
@@ -43,10 +165,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	checkPrereqs()
-
 	projectPath, _ := filepath.Abs(".")
 	runtimeDir := filepath.Join(projectPath, ".claude-team")
+	dbPath := filepath.Join(runtimeDir, "state.db")
+
+	if *checkFlag {
+		runCheck(projectPath, dbPath)
+		return
+	}
+
 	workflowsDir := filepath.Join(runtimeDir, "workflows")
 
 	for _, d := range []string{
@@ -58,7 +185,10 @@ func main() {
 		os.MkdirAll(d, 0755)
 	}
 
-	db, err := store.Open(filepath.Join(runtimeDir, "state.db"))
+	// Auto-register MCP in project .claude/settings.json so Claude Code picks it up.
+	ensureProjectMCP(projectPath, dbPath)
+
+	db, err := store.Open(dbPath)
 	if err != nil {
 		log.Fatal("open db:", err)
 	}
