@@ -31,3 +31,4 @@ docs/demo-browser.*
 docs/demo.mp4
 docs/playwright-record.mjs
 docs/*.webm
+docs/launch/
