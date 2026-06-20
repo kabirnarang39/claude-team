@@ -76,10 +76,6 @@ You → /team-dispatch → Main Coordinator (your Claude Code session)
 
 Agent outputs land in `.claude-team/runs/<run_id>/` and are viewable in the dashboard.
 
-## Troubleshooting
-
-See [docs/troubleshooting.md](docs/troubleshooting.md).
-
 ## Contributing
 
 PRs welcome. Run `go test ./...` before opening a PR.
