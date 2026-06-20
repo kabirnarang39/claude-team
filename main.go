@@ -21,9 +21,6 @@ import (
 var version = "1.0.0"
 
 func checkPrereqs() {
-	if os.Getenv("ANTHROPIC_API_KEY") == "" {
-		log.Println("warn: ANTHROPIC_API_KEY not set — agents will fail to run")
-	}
 	if _, err := os.Stat("mcp/node_modules"); os.IsNotExist(err) {
 		log.Println("warn: mcp/node_modules not found — run: cd mcp && npm install")
 	}

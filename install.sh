@@ -33,11 +33,6 @@ check claude  "https://claude.ai/download"
 check node    "https://nodejs.org"
 check npm     "https://nodejs.org"
 
-if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-  echo "WARN: ANTHROPIC_API_KEY is not set — agents will fail to run."
-  echo "      Set it with: export ANTHROPIC_API_KEY=sk-ant-..."
-fi
-
 # ── Download binary ──────────────────────────────────────────────────────────
 echo "Installing Anton $VERSION for $PLATFORM..."
 mkdir -p "$INSTALL_DIR"
