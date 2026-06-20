@@ -63,25 +63,31 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	conn.SetPongHandler(func(string) error {
 		return conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline))
 	})
+	if err := conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline)); err != nil {
+		conn.Close()
+		return
+	}
 	h.Register(conn)
+
+	// Ping goroutine: sends pings on interval, exits on write error.
+	// Closing conn causes the read loop below to also exit.
 	go func() {
-		defer h.Unregister(conn)
 		ticker := time.NewTicker(wsPingInterval)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				h.mu.Lock()
-				err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(wsPongDeadline))
-				h.mu.Unlock()
-				if err != nil {
-					return
-				}
+		for range ticker.C {
+			h.mu.Lock()
+			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(wsPongDeadline))
+			h.mu.Unlock()
+			if err != nil {
+				conn.Close()
+				return
 			}
 		}
 	}()
+
 	// Read loop: drives pong handler and detects disconnects.
-	conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline)) //nolint:errcheck
+	// Single Unregister here; ping goroutine closes conn on write failure.
+	defer h.Unregister(conn)
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
 			return
