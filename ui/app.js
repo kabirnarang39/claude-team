@@ -289,14 +289,15 @@ function renderRunHistory() {
   el.innerHTML = state.runs.map((r) => {
     const dot = r.status === 'running' ? 'var(--amber)' :
                 r.status === 'done'    ? 'var(--green)' :
-                r.status === 'blocked' ? 'var(--red)'   : 'var(--muted)'
+                r.status === 'blocked' ? 'var(--red)'   :
+                r.status === 'pending' ? 'var(--accent)' : 'var(--muted)'
     const isActive = state.activeRun && r.id === state.activeRun.id
     return `
       <div class="run-item${isActive ? ' active' : ''}" data-id="${esc(r.id)}" onclick="loadRunDetail('${esc(r.id)}')">
         <div class="ri-name">
           <span class="status-badge" style="background:${dot}"></span>${esc(r.workflow_name || r.id)}
         </div>
-        <div class="ri-meta">${esc(r.status)} · ${fmtTime(r.started_at)}</div>
+        <div class="ri-meta">${r.status === 'pending' ? 'waiting for Claude' : esc(r.status)} · ${fmtTime(r.started_at)}</div>
       </div>`
   }).join('')
 }
@@ -320,19 +321,20 @@ function renderTreeSimple() {
 
   if (!state.agents.length) {
     const w = svg.parentElement ? svg.parentElement.clientWidth || 700 : 700
-    const isRunning = state.activeRun && state.activeRun.status === 'running'
+    const isRunning = state.activeRun && (state.activeRun.status === 'running' || state.activeRun.status === 'pending')
     const noRuns = state.runs.length === 0
 
     if (isRunning) {
       svg.setAttribute('viewBox', `0 0 ${w} 100`)
       svg.setAttribute('height', '100')
+      const isPending = state.activeRun.status === 'pending'
       svg.innerHTML = `
         <text x="${w/2}" y="42" text-anchor="middle"
-          style="fill:var(--amber);font-family:var(--font);font-size:12px;font-weight:600">
-          ${esc(state.activeRun.id)} — agents working…</text>
+          style="fill:${isPending ? 'var(--accent)' : 'var(--amber)'};font-family:var(--font);font-size:12px;font-weight:600">
+          ${isPending ? 'Waiting for /team-dispatch in Claude Code…' : esc(state.activeRun.id) + ' — agents working…'}</text>
         <text x="${w/2}" y="62" text-anchor="middle"
           style="fill:var(--muted);font-family:var(--font);font-size:10px">
-          Tree updates automatically when first agent reports</text>`
+          ${isPending ? 'Run /team-dispatch --from-browser in your Claude session' : 'Tree updates automatically when first agent reports'}</text>`
       return
     }
 

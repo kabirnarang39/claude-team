@@ -9,7 +9,7 @@ Read workflow → dispatch sub-coordinators in sequence → synthesize results.
 ## Startup Sequence
 
 1. Read task: `.claude-team/pending-task.md`
-2. Parse `Run ID:` line — **use that value as run_id**. If no `Run ID:` line found, generate: timestamp + 6 random hex chars (e.g. `anton-1750420000-a3f2c1`)
+2. Parse `Run ID:` line — **use that value as run_id**. This line is always present (written by `team-dispatch` before calling this coordinator). If missing, stop and report an error.
 3. Parse `Workflow:` line to find workflow name
 4. Read workflow YAML: check `./workflows/<name>.yaml` first (project-local); if not found, read `~/.claude/anton/workflows/<name>.yaml`
 5. Export: `export ANTON_RUN_ID=<run_id>`

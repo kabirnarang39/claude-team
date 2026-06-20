@@ -253,7 +253,7 @@ func (s *Store) GetRunDetail(runID string) (*RunDetail, error) {
 
 func (s *Store) CreateRunWithID(id, workflowName string) error {
 	_, err := s.db.Exec(
-		`INSERT OR IGNORE INTO runs (id, workflow_name, status, started_at) VALUES (?, ?, 'running', ?)`,
+		`INSERT OR IGNORE INTO runs (id, workflow_name, status, started_at) VALUES (?, ?, 'pending', ?)`,
 		id, workflowName, time.Now().Unix(),
 	)
 	return err
@@ -290,6 +290,9 @@ func (s *Store) UpsertAgentResult(r AgentResult) error {
 	if err := s.InsertAgentResult(r); err != nil {
 		return err
 	}
+	// Ensure the run is marked running once the first agent result arrives.
+	s.db.Exec(`UPDATE runs SET status='running' WHERE id=? AND status='pending'`, r.RunID)
+
 	// Map agent status → phase status.
 	phaseStatus := "running"
 	switch r.Status {
