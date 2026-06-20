@@ -54,7 +54,9 @@ BINARY_URL="$REPO/releases/download/$VERSION/anton-$PLATFORM"
 curl -fsSL "$BINARY_URL" -o "$INSTALL_DIR/anton"
 chmod +x "$INSTALL_DIR/anton"
 # Remove macOS provenance/quarantine attributes that block execution on macOS 26+
+# Must clear both the binary and its parent directory
 xattr -c "$INSTALL_DIR/anton" 2>/dev/null || true
+xattr -c "$INSTALL_DIR" 2>/dev/null || true
 
 # ── Extract skills and MCP from source archive ───────────────────────────────
 echo "Installing Anton skills and MCP server..."
