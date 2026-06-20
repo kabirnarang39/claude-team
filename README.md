@@ -1,83 +1,85 @@
 # Anton
 
-**11 specialist AI agents. One slash command. Live in your browser.**
+**I gave Claude Code a team of 11 AI specialists.**
+
+One slash command. They work in parallel. You watch them live in your browser.
 
 ```
 /team-dispatch build user auth with JWT and refresh tokens
 ```
-
-A planner maps requirements. An architect writes the ADR. Three engineers tackle backend, frontend, and database in parallel. QA writes test cases. Security checks OWASP. DevOps writes the Dockerfile. You watch every agent's reasoning live in a browser dashboard.
 
 [![CI](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml/badge.svg)](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml)
 [![Go 1.22+](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/kabirnarang39/claude-team)](https://github.com/kabirnarang39/claude-team/releases)
 
-**Works inside your existing Claude Code session. No new API key. No Python. No venv.**
+![Anton — 11 specialist agents working in parallel, live in your browser](docs/demo.gif)
 
-![Anton demo — 11 agents completing a feature-build workflow phase by phase](docs/demo.gif)
-
-The workflow YAML files (`workflows/`) and agent role prompts (`roles/`) are plain text — read them, fork them, make them yours.
-
-> If Anton saves you time, ⭐ this repo — it helps others find it.
+> No Python. No new API key. No venv. Runs inside the Claude Code subscription you already have.
 
 ---
 
-## Table of Contents
-
-- [Quick Start](#quick-start)
-- [What You Get](#what-you-get)
-- [The Agent Roles](#the-agent-roles)
-- [Workflows](#workflows)
-- [Why Anton?](#why-anton)
-- [How It Works](#how-it-works)
-- [Add a Workflow](#add-a-workflow)
-- [Add a Role](#add-a-role)
-- [CLI Reference](#cli-reference)
-- [Build From Source](#build-from-source)
-- [Contributing](#contributing)
-
----
-
-## Quick Start
-
-**Install (macOS / Linux):**
+## Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
 ```
 
-**Start the dashboard:**
+## Quick Start
 
 ```bash
-cd your-project
+# 1. Start Anton in your project directory
 anton
-# Anton running at http://localhost:3000
-# MCP coordinator auto-registered in .claude/settings.json
-```
 
-**Open Claude Code in the same directory:**
-
-```bash
+# 2. Open Claude Code in the same directory
 claude
+
+# 3. Dispatch a task
+/team-dispatch build user auth with JWT and refresh tokens
 ```
 
-**Dispatch a task:**
+Open `http://localhost:3000` — watch 11 specialists work through planning, architecture, engineering, QA, and DevOps. Live.
+
+> **First time?** Run `anton --check` to confirm setup. **Browser dispatch:** Enter a task at `http://localhost:3000`, click ▶ Dispatch, paste into Claude Code.
+
+---
+
+## ⚡ Speed — Parallel by default
+
+Claude Code runs one agent at a time. Anton runs 11 simultaneously.
+
+While your architect writes the ADR, three engineers tackle backend, frontend, and database in parallel. While QA writes test cases, security runs the OWASP checklist. A task that would take hours of sequential prompting completes in minutes.
 
 ```
-/team-dispatch build user authentication with JWT and refresh tokens
+Phase 1 (Planning):     requirements-analyst → tech-writer
+Phase 2 (Architecture): senior-architect + api-designer (parallel)
+Phase 3 (Engineering):  backend + frontend + dba (parallel)
+Phase 4 (QA):           qa-engineer + security-reviewer + e2e-tester (parallel)
+Phase 5 (DevOps):       devops-engineer
 ```
 
-Open `http://localhost:3000` and watch 11 specialist agents work through planning, architecture, engineering, QA, and DevOps — live.
+## 👁 Observability — Watch them work
 
-> **Verify setup:** Run `anton --check` to confirm everything is wired correctly.  
-> **Browser dispatch:** Enter a task at `http://localhost:3000`, click **▶ Dispatch**, paste the command into Claude Code.
+Every agent's reasoning is visible in real time. Click any node in the dashboard to read its full output. Nothing is hidden, nothing is a black box.
+
+All outputs land in `.claude-team/runs/<run_id>/` as plain Markdown files — yours to read, edit, and version-control.
+
+## 🧩 Simplicity — Nothing new to install
+
+| What you need | What you don't need |
+|--------------|-------------------|
+| Claude Code (you have it) | Python / pip / venv |
+| Node.js 20+ | New API key |
+| Anton (one curl install) | LangChain / CrewAI |
+| | New subscription |
+
+The workflows are plain YAML. The agent roles are plain Markdown. Read them, fork them, make them yours.
 
 ---
 
 ## What You Get
 
-Anton agents produce **structured analysis and planning outputs** — acceptance criteria, architecture decisions, API specs, security reports, test plans, infrastructure configs. Every file lands in `.claude-team/runs/<run_id>/` and is readable in the dashboard.
+Anton agents produce **structured analysis and planning outputs** — every file lands in `.claude-team/runs/<run_id>/` and is readable in the dashboard.
 
 | Agent | Produces | Example |
 |-------|----------|---------|
@@ -121,12 +123,6 @@ Before recommending any library: check its current maintenance status.
 Read existing code structure before proposing architecture.
 ```
 
-**`roles/requirements-analyst.md`** (excerpt):
-```
-Extract clear, unambiguous acceptance criteria. Never guess. Never assume.
-If a Jira/Linear URL is present, fetch the ticket. Search domain context before writing.
-```
-
 Read and fork the full prompts in [`roles/`](roles/). Add your own specialist in under 10 minutes.
 
 ---
@@ -147,16 +143,7 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 
 ## Why Anton?
 
-**Anton is for Claude Code users who want parallelism, specialization, and observability without leaving their terminal.**
-
-### Claude Code is one agent. Anton is a team.
-
-- **Parallelism**: your architect is writing the ADR while your backend engineer is planning the API while your DBA is designing the schema — simultaneously.
-- **Specialization**: your security reviewer only does security. It has the OWASP docs in context. It doesn't context-switch.
-- **Observability**: you watch every agent's reasoning live. Click any node in the dashboard to read its full output.
-- **Zero orchestration code**: the workflows are YAML. The roles are Markdown. You read them, edit them, own them.
-
-### vs. CrewAI / AutoGen / MetaGPT
+### Anton vs. other multi-agent frameworks
 
 | | Anton | CrewAI | AutoGen | MetaGPT |
 |--|-------|--------|---------|---------|
@@ -170,7 +157,7 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Local / offline-first | ✅ | ✅ | ✅ | ✅ |
 | Open source | ✅ | ✅ | ✅ | ✅ |
 
-### vs. GitHub Copilot Workspace / Devin
+### Anton vs. Devin / Copilot Workspace
 
 Anton doesn't try to replace your judgment or write code autonomously. Agents produce structured analysis, plans, and specifications — you review, decide, and implement. No surprise commits, no mystery diffs. You own the process.
 
@@ -201,13 +188,11 @@ You → /team-dispatch → Main Coordinator (your Claude Code session)
                     Browser dashboard       ← live agent tree
 ```
 
-1. **You dispatch** a task from Claude Code with `/team-dispatch`.
+1. **You dispatch** a task with `/team-dispatch`.
 2. **The coordinator** reads the workflow YAML and spins up sub-coordinators per phase.
-3. **Each agent** reads its role prompt (`roles/<name>.md`), does its work, and reports via the MCP tool.
+3. **Each agent** reads its role prompt, does its work, and reports via the MCP tool.
 4. **Anton's Go server** writes results to SQLite and streams updates over WebSocket.
 5. **The dashboard** shows live progress — click any agent to read its full output.
-
-All outputs land in `.claude-team/runs/<run_id>/` as plain Markdown files.
 
 ---
 
@@ -235,7 +220,7 @@ phases:
       - security-reviewer
 ```
 
-**`sequential`** — agents run one after another, each receiving the previous agent's output.  
+**`sequential`** — agents run one after another, each receiving the previous agent's output.
 **`parallel`** — agents run concurrently in the same phase.
 
 **Available roles:** `requirements-analyst` · `tech-writer` · `senior-architect` · `api-designer` · `backend-engineer` · `frontend-engineer` · `dba` · `qa-engineer` · `e2e-tester` · `security-reviewer` · `code-reviewer` · `debugger` · `devops-engineer` · `performance-engineer` · `mobile-engineer`
@@ -306,3 +291,7 @@ See [SECURITY.md](SECURITY.md) for the vulnerability disclosure process.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+> If Anton saves you time, ⭐ this repo — it helps others find it.
