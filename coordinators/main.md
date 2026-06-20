@@ -45,6 +45,95 @@ After each sub-coordinator or agent dispatch completes, perform the following st
    Replace `<run_id>` and `<agent-name>` with the actual values for that agent.
 3. Continue to the next phase regardless of whether the curl succeeds — the fallback file is the source of truth.
 
+## Human Review Gates
+
+### Plan Review Gate (after planning, before architecture)
+
+After the planning sub-coordinator reports DONE:
+
+1. Read `.claude-team/runs/<run_id>/prd.md`
+2. Signal the UI — run this curl (failure is non-fatal; continue regardless):
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"plan-review\",\"summary\":\"$(head -5 .claude-team/runs/<run_id>/prd.md | tr '\n' ' ' | tr '"' "'"  | cut -c1-200)\"}"
+   ```
+3. Print the PRD content to the user (use `cat .claude-team/runs/<run_id>/prd.md`)
+4. Print this prompt exactly:
+   ```
+   ── PLAN REVIEW ────────────────────────────────────────────────────────────
+   Review the PRD above before architecture design begins.
+
+   Type  approved              to proceed.
+   Type  rejected: <feedback>  to redo planning with your feedback.
+   ───────────────────────────────────────────────────────────────────────────
+   ```
+5. Read user response (wait — do not auto-proceed):
+   - Response starts with `approved`:
+     - Run:
+       ```bash
+       curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+         -H "Content-Type: application/json" \
+         -d '{"gate":"plan-review","status":"approved","feedback":""}'
+       ```
+     - Continue to dispatch architecture sub-coordinator.
+   - Response starts with `rejected:`:
+     - Extract feedback text (everything after `rejected:`)
+     - Run:
+       ```bash
+       curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+         -H "Content-Type: application/json" \
+         -d "{\"gate\":\"plan-review\",\"status\":\"rejected\",\"feedback\":\"<feedback text>\"}"
+       ```
+     - Append `\n\nHuman feedback on plan: <feedback text>` to the original task text
+     - Re-dispatch planning sub-coordinator with the updated task
+     - Return to step 1 of this gate (loop)
+   - Any other response: re-print the prompt from step 4 and wait again
+
+### Task Review Gate (after architecture, before engineering)
+
+After the architecture sub-coordinator reports DONE:
+
+1. Read `.claude-team/runs/<run_id>/adr.md` and `.claude-team/runs/<run_id>/openapi.yaml`
+2. Signal the UI:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"task-review\",\"summary\":\"$(head -5 .claude-team/runs/<run_id>/adr.md | tr '\n' ' ' | tr '"' "'"  | cut -c1-200)\"}"
+   ```
+3. Print ADR content and first 60 lines of openapi.yaml to the user
+4. Print this prompt exactly:
+   ```
+   ── TASK REVIEW ────────────────────────────────────────────────────────────
+   Review the architecture decision record and API design above
+   before engineers begin implementation.
+
+   Type  approved              to proceed.
+   Type  rejected: <feedback>  to redo architecture with your feedback.
+   ───────────────────────────────────────────────────────────────────────────
+   ```
+5. Read user response:
+   - Response starts with `approved`:
+     - Run:
+       ```bash
+       curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+         -H "Content-Type: application/json" \
+         -d '{"gate":"task-review","status":"approved","feedback":""}'
+       ```
+     - Continue to dispatch engineering sub-coordinator.
+   - Response starts with `rejected:`:
+     - Extract feedback text
+     - Run:
+       ```bash
+       curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+         -H "Content-Type: application/json" \
+         -d "{\"gate\":\"task-review\",\"status\":\"rejected\",\"feedback\":\"<feedback text>\"}"
+       ```
+     - Append `\n\nHuman feedback on architecture: <feedback text>` to the task
+     - Re-dispatch architecture sub-coordinator with the updated task
+     - Return to step 1 of this gate (loop)
+   - Any other response: re-print the prompt from step 4 and wait again
+
 ## run_id Propagation Rule
 
 Pass the EXACT same run_id to every sub-coordinator and every agent you brief.

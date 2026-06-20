@@ -476,3 +476,86 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
 }
+
+func (s *Server) handleSignalReview(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if strings.Contains(id, "..") || strings.Contains(id, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+	var body struct {
+		Gate    string `json:"gate"`
+		Summary string `json:"summary"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	if body.Gate != "plan-review" && body.Gate != "task-review" {
+		http.Error(w, "invalid gate", 400)
+		return
+	}
+	if s.cfg.Store == nil {
+		http.Error(w, "not configured", 500)
+		return
+	}
+	if err := s.cfg.Store.CreateReview(id, body.Gate, body.Summary); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	msg, _ := json.Marshal(map[string]any{
+		"type": "review_pending",
+		"payload": map[string]string{
+			"run_id":  id,
+			"gate":    body.Gate,
+			"summary": body.Summary,
+		},
+	})
+	s.cfg.Hub.Broadcast(msg)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleResolveReview(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if strings.Contains(id, "..") || strings.Contains(id, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+	var body struct {
+		Gate     string `json:"gate"`
+		Status   string `json:"status"`
+		Feedback string `json:"feedback"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	if body.Gate != "plan-review" && body.Gate != "task-review" {
+		http.Error(w, "invalid gate", 400)
+		return
+	}
+	if body.Status != "approved" && body.Status != "rejected" {
+		http.Error(w, "invalid status", 400)
+		return
+	}
+	if s.cfg.Store == nil {
+		http.Error(w, "not configured", 500)
+		return
+	}
+	if err := s.cfg.Store.ResolveReview(id, body.Gate, body.Status, body.Feedback); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	msg, _ := json.Marshal(map[string]any{
+		"type": "review_resolved",
+		"payload": map[string]string{
+			"run_id": id,
+			"gate":   body.Gate,
+			"status": body.Status,
+		},
+	})
+	s.cfg.Hub.Broadcast(msg)
+	w.WriteHeader(http.StatusNoContent)
+}

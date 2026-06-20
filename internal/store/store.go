@@ -35,6 +35,17 @@ type Phase struct {
 	CompletedAt int64  `json:"completed_at"`
 }
 
+type HumanReview struct {
+	ID         int64  `json:"id"`
+	RunID      string `json:"run_id"`
+	Gate       string `json:"gate"`
+	Status     string `json:"status"`
+	Summary    string `json:"summary"`
+	Feedback   string `json:"feedback"`
+	CreatedAt  int64  `json:"created_at"`
+	ResolvedAt int64  `json:"resolved_at,omitempty"`
+}
+
 type RunDetail struct {
 	ID           string        `json:"id"`
 	WorkflowName string        `json:"workflow_name"`
@@ -43,6 +54,7 @@ type RunDetail struct {
 	CompletedAt  int64         `json:"completed_at"`
 	Phases       []Phase       `json:"phases"`
 	Results      []AgentResult `json:"results"`
+	Reviews      []HumanReview `json:"reviews"`
 }
 
 func Open(path string) (*Store, error) {
@@ -133,6 +145,25 @@ func (s *Store) migrate() error {
 		s.db.Exec(`ALTER TABLE messages ADD COLUMN run_id TEXT`)
 		s.db.Exec(`ALTER TABLE messages ADD COLUMN response TEXT`)
 		s.db.Exec(`INSERT INTO schema_version VALUES (2)`)
+	}
+
+	if version < 3 {
+		_, err := s.db.Exec(`
+			CREATE TABLE IF NOT EXISTS human_reviews (
+				id          INTEGER PRIMARY KEY AUTOINCREMENT,
+				run_id      TEXT    NOT NULL,
+				gate        TEXT    NOT NULL,
+				status      TEXT    NOT NULL DEFAULT 'pending',
+				summary     TEXT    DEFAULT '',
+				feedback    TEXT    DEFAULT '',
+				created_at  INTEGER NOT NULL,
+				resolved_at INTEGER
+			);
+		`)
+		if err != nil {
+			return err
+		}
+		s.db.Exec(`INSERT INTO schema_version VALUES (3)`)
 	}
 
 	_, err := s.db.Exec(`PRAGMA journal_mode=WAL`)

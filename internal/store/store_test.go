@@ -146,6 +146,81 @@ func TestWriteTask(t *testing.T) {
 	}
 }
 
+func TestHumanReview(t *testing.T) {
+	s := openTestStore(t)
+	runID, err := s.CreateRun("feature-build")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create pending review
+	if err := s.CreateReview(runID, "plan-review", "PRD covers auth and payments"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify present in RunDetail
+	detail, err := s.GetRunDetail(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(detail.Reviews) != 1 {
+		t.Fatalf("expected 1 review, got %d", len(detail.Reviews))
+	}
+	r := detail.Reviews[0]
+	if r.Gate != "plan-review" {
+		t.Errorf("gate: got %q, want plan-review", r.Gate)
+	}
+	if r.Status != "pending" {
+		t.Errorf("status: got %q, want pending", r.Status)
+	}
+	if r.Summary != "PRD covers auth and payments" {
+		t.Errorf("summary: got %q", r.Summary)
+	}
+	if r.CreatedAt == 0 {
+		t.Error("created_at must be non-zero")
+	}
+
+	// Resolve as approved
+	if err := s.ResolveReview(runID, "plan-review", "approved", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	detail2, err := s.GetRunDetail(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail2.Reviews[0].Status != "approved" {
+		t.Errorf("status after resolve: got %q, want approved", detail2.Reviews[0].Status)
+	}
+	if detail2.Reviews[0].ResolvedAt == 0 {
+		t.Error("resolved_at must be non-zero after resolve")
+	}
+
+	// Rejection with feedback
+	if err := s.CreateReview(runID, "task-review", "ADR summary"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.ResolveReview(runID, "task-review", "rejected", "Add more detail on caching layer"); err != nil {
+		t.Fatal(err)
+	}
+	detail3, err := s.GetRunDetail(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var taskReview *store.HumanReview
+	for i := range detail3.Reviews {
+		if detail3.Reviews[i].Gate == "task-review" {
+			taskReview = &detail3.Reviews[i]
+		}
+	}
+	if taskReview == nil {
+		t.Fatal("task-review not found")
+	}
+	if taskReview.Feedback != "Add more detail on caching layer" {
+		t.Errorf("feedback: got %q", taskReview.Feedback)
+	}
+}
+
 func TestWatcher(t *testing.T) {
 	s := openTestStore(t)
 	out := make(chan store.Event, 10)

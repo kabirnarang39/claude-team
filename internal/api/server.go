@@ -60,6 +60,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/settings", s.handleGetSettings)
 	mux.HandleFunc("POST /api/settings", s.handleSettings)
 	mux.HandleFunc("POST /api/ingest-result", s.handleIngestResult)
+	mux.HandleFunc("POST /api/runs/{id}/signal-review", s.handleSignalReview)
+	mux.HandleFunc("POST /api/runs/{id}/resolve-review", s.handleResolveReview)
 	mux.HandleFunc("GET /api/stats", s.handleStats)
 	mux.HandleFunc("GET /ws", s.cfg.Hub.ServeWS)
 	return mux
