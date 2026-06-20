@@ -153,11 +153,61 @@ func runCheck(projectPath, dbPath string) {
 	}
 }
 
+// seedDemoRun inserts a realistic completed run so first-time visitors
+// can see what the dashboard looks like without running a real workflow.
+func seedDemoRun(db *store.Store) error {
+	runID := "demo-feature-build-jwt-auth"
+	if err := db.CreateRunWithID(runID, "feature-build"); err != nil {
+		return err
+	}
+	type agent struct {
+		phase   string
+		name    string
+		summary string
+		conf    string
+		tokens  int
+	}
+	agents := []agent{
+		{"planning", "requirements-analyst", "Defined 12 acceptance criteria: user registration, login, logout, JWT issuance (RS256), refresh token rotation (7d TTL), RBAC (admin/editor/viewer), session invalidation, rate limiting (10 req/min), audit logging, password reset, email verification, MFA stub.", "HIGH", 3200},
+		{"planning", "tech-writer", "Drafted product requirements doc with scope boundaries, open questions, and sequence diagrams for all 4 auth flows. Noted: PKCE for future OAuth, bcrypt cost factor 12 (not 10).", "HIGH", 2800},
+		{"architecture", "senior-architect", "Designed stateless JWT architecture (RS256 asymmetric) with Redis-backed refresh token store. Chose asymmetric keys for multi-service verification. Defined auth middleware contract.", "HIGH", 4100},
+		{"architecture", "api-designer", "Designed RESTful auth API: POST /auth/register, /auth/login, /auth/refresh, DELETE /auth/logout, GET /auth/me. Documented with OpenAPI 3.1. Rate limiting headers specified.", "HIGH", 3500},
+		{"engineering", "backend-engineer", "Implemented JWT service (RS256), Redis refresh token store, auth middleware, rate limiter (token bucket), and all 5 endpoints. 47 unit tests, 100% coverage on token logic.", "HIGH", 6200},
+		{"engineering", "frontend-engineer", "Built login, register, token-refresh flows. Auth context with React hook. Protected route wrapper. Automatic 401 redirect. Token stored in httpOnly cookie.", "HIGH", 4800},
+		{"engineering", "dba", "Designed users, refresh_tokens, roles, user_roles, audit_log tables. Indices on email (unique) and token_hash. Migration files written in plain SQL.", "MEDIUM", 2900},
+		{"qa", "qa-engineer", "Wrote 34 integration tests: happy path, expired tokens, tampered signatures, revoked sessions, rate limit enforcement, RBAC boundary checks. All passing.", "HIGH", 3800},
+		{"qa", "security-reviewer", "Reviewed against OWASP Top 10. No critical findings. Two medium: add PKCE for OAuth flows (future roadmap), increase bcrypt cost factor 10→12. Both added to backlog.", "HIGH", 4200},
+		{"qa", "e2e-tester", "Ran 8 Playwright E2E scenarios: register→login→protected route→logout, password reset, session expiry, concurrent tab sync. All passing.", "HIGH", 3100},
+		{"devops", "devops-engineer", "Multi-stage Dockerfile (non-root, minimal image). docker-compose with Redis. GitHub Actions CI/CD pipeline. Helm chart for Kubernetes. Secrets via env vars, never baked in.", "HIGH", 3400},
+	}
+	pairs := []store.PhaseAgentPair{
+		{PhaseID: "planning", Agents: []string{"requirements-analyst", "tech-writer"}},
+		{PhaseID: "architecture", Agents: []string{"senior-architect", "api-designer"}},
+		{PhaseID: "engineering", Agents: []string{"backend-engineer", "frontend-engineer", "dba"}},
+		{PhaseID: "qa", Agents: []string{"qa-engineer", "security-reviewer", "e2e-tester"}},
+		{PhaseID: "devops", Agents: []string{"devops-engineer"}},
+	}
+	db.PrePopulateAgents(runID, pairs)
+	for _, a := range agents {
+		db.UpsertAgentResult(store.AgentResult{ //nolint:errcheck
+			RunID:      runID,
+			PhaseID:    a.phase,
+			Agent:      a.name,
+			Status:     "DONE",
+			Confidence: a.conf,
+			Summary:    a.summary,
+			TokensUsed: a.tokens,
+		})
+	}
+	return nil
+}
+
 func main() {
 	port := flag.Int("port", 3000, "HTTP port")
 	registryPath := flag.String("registry", "mcp-registry.yaml", "Path to mcp-registry.yaml")
 	versionFlag := flag.Bool("version", false, "Print version and exit")
 	checkFlag := flag.Bool("check", false, "Check Anton setup and exit")
+	demoFlag := flag.Bool("demo", false, "Pre-populate dashboard with a sample completed run")
 	flag.Parse()
 
 	if *versionFlag {
@@ -173,6 +223,8 @@ func main() {
 		runCheck(projectPath, dbPath)
 		return
 	}
+
+	_ = demoFlag // demo mode handled after DB open
 
 	workflowsDir := filepath.Join(runtimeDir, "workflows")
 
@@ -193,6 +245,14 @@ func main() {
 		log.Fatal("open db:", err)
 	}
 	defer db.Close()
+
+	if *demoFlag {
+		if err := seedDemoRun(db); err != nil {
+			log.Printf("warn: demo seed failed: %v", err)
+		} else {
+			fmt.Println("Demo run seeded — open http://localhost:3000")
+		}
+	}
 
 	registry, err := mcp.LoadRegistry(*registryPath)
 	if err != nil {
