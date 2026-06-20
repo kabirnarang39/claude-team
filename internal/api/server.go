@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"claude-team/internal/store"
+	"github.com/kabirnarang39/claude-team/internal/store"
 )
 
 // Config holds all dependencies the server needs.

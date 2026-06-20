@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"claude-team/internal/mcp"
+	"github.com/kabirnarang39/claude-team/internal/mcp"
 )
 
 func TestLoadRegistry(t *testing.T) {

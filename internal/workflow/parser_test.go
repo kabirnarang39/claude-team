@@ -3,7 +3,7 @@ package workflow_test
 import (
 	"testing"
 
-	"claude-team/internal/workflow"
+	"github.com/kabirnarang39/claude-team/internal/workflow"
 )
 
 func TestParse(t *testing.T) {

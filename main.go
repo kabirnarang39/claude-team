@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"claude-team/internal/api"
-	"claude-team/internal/mcp"
-	"claude-team/internal/store"
-	"claude-team/internal/workflow"
+	"github.com/kabirnarang39/claude-team/internal/api"
+	"github.com/kabirnarang39/claude-team/internal/mcp"
+	"github.com/kabirnarang39/claude-team/internal/store"
+	"github.com/kabirnarang39/claude-team/internal/workflow"
 )
 
 var version = "1.0.0"
@@ -98,8 +98,14 @@ func main() {
 		OnWorkflowUpload: func(data []byte, name string) error {
 			base := filepath.Base(name)
 			path := filepath.Join(workflowsDir, base)
-			abs, _ := filepath.Abs(path)
-			absDir, _ := filepath.Abs(workflowsDir)
+			abs, err := filepath.Abs(path)
+			if err != nil {
+				return fmt.Errorf("invalid workflow name")
+			}
+			absDir, err := filepath.Abs(workflowsDir)
+			if err != nil {
+				return fmt.Errorf("invalid workflow name")
+			}
 			if !strings.HasPrefix(abs, absDir+string(filepath.Separator)) {
 				return fmt.Errorf("invalid workflow name")
 			}
@@ -179,8 +185,14 @@ func main() {
 		SaveWorkflow: func(name, yamlContent string) error {
 			base := filepath.Base(name)
 			path := filepath.Join(workflowsDir, base)
-			abs, _ := filepath.Abs(path)
-			absDir, _ := filepath.Abs(workflowsDir)
+			abs, err := filepath.Abs(path)
+			if err != nil {
+				return fmt.Errorf("invalid workflow name")
+			}
+			absDir, err := filepath.Abs(workflowsDir)
+			if err != nil {
+				return fmt.Errorf("invalid workflow name")
+			}
 			if !strings.HasPrefix(abs, absDir+string(filepath.Separator)) {
 				return fmt.Errorf("invalid workflow name")
 			}

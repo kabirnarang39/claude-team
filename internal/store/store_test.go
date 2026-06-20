@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"claude-team/internal/store"
+	"github.com/kabirnarang39/claude-team/internal/store"
 )
 
 func TestOpenAndMigrate(t *testing.T) {

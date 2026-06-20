@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"claude-team/internal/api"
-	"claude-team/internal/store"
+	"github.com/kabirnarang39/claude-team/internal/api"
+	"github.com/kabirnarang39/claude-team/internal/store"
 )
 
 func TestStatusEndpointNoStore(t *testing.T) {

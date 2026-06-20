@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"claude-team/internal/store"
-	wflow "claude-team/internal/workflow"
+	"github.com/kabirnarang39/claude-team/internal/store"
+	wflow "github.com/kabirnarang39/claude-team/internal/workflow"
 )
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
