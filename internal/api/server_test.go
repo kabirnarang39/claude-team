@@ -481,8 +481,8 @@ func TestHandleStats_empty(t *testing.T) {
 	if body["runs_total"] != float64(0) {
 		t.Errorf("runs_total: want 0, got %v", body["runs_total"])
 	}
-	if body["caveman_compression_pct"] != float64(22) {
-		t.Errorf("caveman_compression_pct: want 22, got %v", body["caveman_compression_pct"])
+	if body["caveman_compression_pct"] != float64(1) {
+		t.Errorf("caveman_compression_pct: want 1, got %v", body["caveman_compression_pct"])
 	}
 }
 

@@ -24,8 +24,8 @@ func TestGetStats_empty(t *testing.T) {
 	if stats.ContextIsolationMult != 1.0 {
 		t.Errorf("context_isolation_multiplier: want 1.0, got %f", stats.ContextIsolationMult)
 	}
-	if stats.CavemanCompressionPct != 22 {
-		t.Errorf("caveman_compression_pct: want 22, got %d", stats.CavemanCompressionPct)
+	if stats.CavemanCompressionPct != 1 {
+		t.Errorf("caveman_compression_pct: want 1, got %d", stats.CavemanCompressionPct)
 	}
 	if stats.ParallelismSpeedup != 3.0 {
 		t.Errorf("parallelism_speedup: want 3.0, got %f", stats.ParallelismSpeedup)

@@ -35,7 +35,7 @@ func (s *Store) GetStats() (Stats, error) {
 	// Static constants measured by scripts/benchmark_caveman.go and workflow YAML analysis.
 	// caveman_compression_pct: measured word reduction from article/filler stripping.
 	// parallelism_speedup: max parallel agents in any phase of feature-build.yaml (engineering: 3).
-	st.CavemanCompressionPct = 22
+	st.CavemanCompressionPct = 1
 	st.ParallelismSpeedup = 3.0
 
 	// Context isolation multiplier: ratio of solo-session context growth vs Anton fresh sub-agents.
