@@ -84,6 +84,28 @@ func ensureProjectMCP(projectPath, dbPath string) {
 	}
 	settings["mcpServers"] = mcpServers
 
+	// Register Anton skills with absolute paths so Claude Code picks them up as
+	// slash commands regardless of which directory the user runs `claude` from.
+	sDir := skillsDir()
+	antonSkills := []string{
+		filepath.Join(sDir, "team-dispatch.md"),
+		filepath.Join(sDir, "team-status.md"),
+		filepath.Join(sDir, "team-stop.md"),
+	}
+	existingSkills, _ := settings["skills"].([]interface{})
+	skillSet := make(map[string]bool)
+	for _, s := range existingSkills {
+		if sv, ok := s.(string); ok {
+			skillSet[sv] = true
+		}
+	}
+	for _, sk := range antonSkills {
+		if !skillSet[sk] {
+			existingSkills = append(existingSkills, sk)
+		}
+	}
+	settings["skills"] = existingSkills
+
 	data, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return
