@@ -23,6 +23,7 @@ const NW = 150, NH = 44, GAP_X = 195, GAP_Y = 58, MX = 20, MY = 34
 async function init() {
   await loadWorkflows()
   await loadRuns()
+  await loadStats()
   connectWS()
   bindEvents()
   renderTreeSimple()
@@ -84,9 +85,47 @@ function connectWS() {
   state.ws.onmessage = (e) => {
     try {
       const evt = JSON.parse(e.data)
-      if (evt.type === 'agent_result') onAgentResult(evt.payload)
+      if (evt.type === 'agent_result') { onAgentResult(evt.payload); loadStats() }
     } catch (_) {}
   }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats')
+    if (!res.ok) return
+    const s = await res.json()
+    renderStats(s)
+  } catch (_) {}
+}
+
+function renderStats(s) {
+  const panel = document.getElementById('stats-panel')
+  if (!panel) return
+  if (!s || s.runs_total === 0) { panel.style.display = 'none'; return }
+  panel.style.display = 'block'
+  document.getElementById('stat-tokens-total').textContent =
+    s.tokens_total > 0 ? fmtNum(s.tokens_total) + ' tokens used' : '—'
+  document.getElementById('stat-caveman').textContent =
+    s.caveman_compression_pct + '% caveman'
+  document.getElementById('stat-context').textContent =
+    s.context_isolation_multiplier.toFixed(1) + '× vs solo session'
+  document.getElementById('stat-speedup').textContent =
+    s.parallelism_speedup.toFixed(1) + '×'
+  document.getElementById('stat-agents-total').textContent =
+    fmtNum(s.agents_total) + ' dispatched'
+  document.getElementById('stat-agents-avg').textContent =
+    s.avg_agents_per_run.toFixed(1)
+  document.getElementById('stat-runs-total').textContent =
+    s.runs_total + ' completed'
+  document.getElementById('stat-tokens-avg').textContent =
+    fmtNum(Math.round(s.avg_tokens_per_run))
+}
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
 }
 
 function onAgentResult(result) {

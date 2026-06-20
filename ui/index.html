@@ -113,6 +113,32 @@
           <pre class="ac-output-content" id="ac-output-content"></pre>
         </div>
       </div>
+
+      <div class="stats-panel" id="stats-panel" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Token Savings</div>
+            <div class="stat-primary" id="stat-tokens-total">—</div>
+            <div class="stat-secondary"><span class="stat-badge" id="stat-caveman">—% caveman</span></div>
+            <div class="stat-secondary"><span class="stat-badge" id="stat-context">—× vs solo session</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Parallelism</div>
+            <div class="stat-primary" id="stat-speedup">—</div>
+            <div class="stat-secondary">peak speedup on parallel phases</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Agents</div>
+            <div class="stat-primary" id="stat-agents-total">—</div>
+            <div class="stat-secondary"><span id="stat-agents-avg">—</span> avg per run</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Runs</div>
+            <div class="stat-primary" id="stat-runs-total">—</div>
+            <div class="stat-secondary"><span id="stat-tokens-avg">—</span> tokens avg</div>
+          </div>
+        </div>
+      </div>
     </section>
 
   </div>
