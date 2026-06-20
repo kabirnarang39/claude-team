@@ -57,6 +57,8 @@ chmod +x "$INSTALL_DIR/anton"
 # Must clear both the binary and its parent directory
 xattr -c "$INSTALL_DIR/anton" 2>/dev/null || true
 xattr -c "$INSTALL_DIR" 2>/dev/null || true
+# Ad-hoc sign the binary so macOS 26 doesn't kill unsigned cross-compiled binaries
+codesign --sign - "$INSTALL_DIR/anton" 2>/dev/null || true
 
 # ── Extract skills and MCP from source archive ───────────────────────────────
 echo "Installing Anton skills and MCP server..."
