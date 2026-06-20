@@ -23,3 +23,11 @@ mcp/package-lock.json
 
 # macOS
 .DS_Store
+
+# Demo production intermediates
+docs/demo-voice.*
+docs/demo-terminal.mp4
+docs/demo-browser.*
+docs/demo.mp4
+docs/playwright-record.mjs
+docs/*.webm
