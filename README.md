@@ -25,6 +25,8 @@ One slash command. They work in parallel. You watch them live in your browser.
 curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
 ```
 
+> **Homebrew tap coming soon** — star the repo to be notified when `brew install kabirnarang39/tap/anton` lands.
+
 ## Quick Start
 
 ```bash
@@ -95,7 +97,7 @@ Anton agents produce **structured analysis and planning outputs** — every file
 | `e2e-tester` | `e2e-report.md` | Playwright test plan, edge cases |
 | `devops-engineer` | `devops-report.md` | Dockerfile, CI/CD, Helm chart plan |
 
-See [`docs/examples/`](docs/examples/) for real sample outputs.
+See [`docs/examples/feature-build-user-auth/`](docs/examples/feature-build-user-auth/) for real sample outputs — all 11 agents, same task.
 
 ---
 

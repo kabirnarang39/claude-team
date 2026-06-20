@@ -405,6 +405,10 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRunFiles(w http.ResponseWriter, r *http.Request) {
 	runID := r.PathValue("id")
+	if strings.Contains(runID, "..") || strings.Contains(runID, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
 	if s.cfg.RuntimeDir == "" {
 		http.Error(w, "not configured", 500)
 		return
@@ -429,6 +433,10 @@ func (s *Server) handleRunFiles(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleRunFile(w http.ResponseWriter, r *http.Request) {
 	runID := r.PathValue("id")
 	filename := r.PathValue("filename")
+	if strings.Contains(runID, "..") || strings.Contains(runID, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
 	if strings.Contains(filename, "..") || strings.Contains(filename, "/") {
 		http.Error(w, "invalid filename", 400)
 		return

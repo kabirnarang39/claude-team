@@ -2,8 +2,15 @@
 set -euo pipefail
 
 REPO="https://github.com/kabirnarang39/claude-team"
-VERSION="v1.0.0"
 INSTALL_DIR="$HOME/.local/bin"
+
+# ── Fetch latest release ──────────────────────────────────────────────────────
+VERSION="$(curl -fsSL "https://api.github.com/repos/kabirnarang39/claude-team/releases/latest" \
+  | grep -o '"tag_name": "[^"]*"' | grep -o 'v[^"]*')"
+if [ -z "$VERSION" ]; then
+  echo "ERROR: Could not fetch latest release from GitHub. Check your internet connection."
+  exit 1
+fi
 SKILL_DIR="$HOME/.claude/skills"
 MCP_DIR="$HOME/.claude/anton-mcp"
 
