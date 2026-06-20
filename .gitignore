@@ -6,8 +6,10 @@ anton
 claude-team-server
 claude-team
 
-# SDD progress ledger
+# SDD progress ledger and internal dev docs
 .superpowers/
+docs/superpowers/
+docs/validation-findings.md
 
 # Coordinator MCP deps
 mcp/node_modules/
