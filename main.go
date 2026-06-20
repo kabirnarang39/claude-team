@@ -251,6 +251,8 @@ func main() {
 	_ = demoFlag // demo mode handled after DB open
 
 	workflowsDir := filepath.Join(runtimeDir, "workflows")
+	globalHome, _ := os.UserHomeDir()
+	globalWorkflowsDir := filepath.Join(globalHome, ".claude", "anton", "workflows")
 
 	for _, d := range []string{
 		runtimeDir,
@@ -310,6 +312,7 @@ func main() {
 		WorkflowDirs: []string{
 			filepath.Join(projectPath, "workflows"),
 			workflowsDir,
+			globalWorkflowsDir,
 		},
 
 		OnWorkflowUpload: func(data []byte, name string) error {
@@ -353,7 +356,7 @@ func main() {
 		GetWorkflowList: func() ([]string, error) {
 			seen := map[string]bool{}
 			var names []string
-			for _, dir := range []string{filepath.Join(projectPath, "workflows"), workflowsDir} {
+			for _, dir := range []string{filepath.Join(projectPath, "workflows"), workflowsDir, globalWorkflowsDir} {
 				entries, err := os.ReadDir(dir)
 				if err != nil {
 					continue
@@ -382,7 +385,7 @@ func main() {
 				base += ".yaml"
 			}
 			var path string
-			for _, dir := range []string{filepath.Join(projectPath, "workflows"), workflowsDir} {
+			for _, dir := range []string{filepath.Join(projectPath, "workflows"), workflowsDir, globalWorkflowsDir} {
 				p := filepath.Join(dir, base)
 				if _, err := os.Stat(p); err == nil {
 					path = p
