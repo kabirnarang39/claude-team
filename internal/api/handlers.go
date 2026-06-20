@@ -461,3 +461,18 @@ func (s *Server) handleRunFile(w http.ResponseWriter, r *http.Request) {
 		"content": string(data),
 	})
 }
+
+func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Store == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte("{}"))
+		return
+	}
+	stats, err := s.cfg.Store.GetStats()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}

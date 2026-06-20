@@ -457,3 +457,45 @@ func TestRunsEndpointNoStore(t *testing.T) {
 		t.Errorf("expected empty array, got %v", result)
 	}
 }
+
+func TestHandleStats_empty(t *testing.T) {
+	dir := t.TempDir()
+	s, err := store.Open(filepath.Join(dir, "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+
+	srv := api.NewServer(api.Config{Store: s})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/stats", nil)
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: want 200, got %d", rec.Code)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if body["runs_total"] != float64(0) {
+		t.Errorf("runs_total: want 0, got %v", body["runs_total"])
+	}
+	if body["caveman_compression_pct"] != float64(22) {
+		t.Errorf("caveman_compression_pct: want 22, got %v", body["caveman_compression_pct"])
+	}
+}
+
+func TestHandleStats_nilStore(t *testing.T) {
+	srv := api.NewServer(api.Config{})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/stats", nil)
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status: want 200, got %d", rec.Code)
+	}
+	if strings.TrimSpace(rec.Body.String()) != "{}" {
+		t.Errorf("want {}, got %q", rec.Body.String())
+	}
+}
