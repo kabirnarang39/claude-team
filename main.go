@@ -88,9 +88,9 @@ func ensureProjectMCP(projectPath, dbPath string) {
 	// slash commands regardless of which directory the user runs `claude` from.
 	sDir := skillsDir()
 	antonSkills := []string{
-		filepath.Join(sDir, "team-dispatch.md"),
-		filepath.Join(sDir, "team-status.md"),
-		filepath.Join(sDir, "team-stop.md"),
+		filepath.Join(sDir, "team-dispatch"),
+		filepath.Join(sDir, "team-status"),
+		filepath.Join(sDir, "team-stop"),
 	}
 	existingSkills, _ := settings["skills"].([]interface{})
 	skillSet := make(map[string]bool)

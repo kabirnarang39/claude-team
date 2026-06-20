@@ -68,9 +68,13 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 SOURCE_URL="$REPO/archive/refs/tags/$VERSION.tar.gz"
 curl -fsSL "$SOURCE_URL" | tar -xz -C "$TMP_DIR" --strip-components=1
 
-# Install skills
+# Install skills as directories (name/SKILL.md) so Claude Code registers them as slash commands
 mkdir -p "$SKILL_DIR"
-cp "$TMP_DIR/skills/"*.md "$SKILL_DIR/"
+for skill_file in "$TMP_DIR/skills/"*.md; do
+  skill_name="$(basename "$skill_file" .md)"
+  mkdir -p "$SKILL_DIR/$skill_name"
+  cp "$skill_file" "$SKILL_DIR/$skill_name/SKILL.md"
+done
 
 # Install MCP coordinator
 rm -rf "$MCP_DIR"
