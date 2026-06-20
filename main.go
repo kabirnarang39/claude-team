@@ -266,7 +266,10 @@ func main() {
 	watcher := store.NewWatcher(db, storeEvents)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go watcher.Run(ctx)
+	go func() {
+		watcher.Run(ctx)
+		close(storeEvents)
+	}()
 
 	go func() {
 		for evt := range storeEvents {

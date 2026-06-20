@@ -2,13 +2,18 @@ package api
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		h := r.Host
+		return h == "localhost" || h == "127.0.0.1" ||
+			strings.HasPrefix(h, "localhost:") || strings.HasPrefix(h, "127.0.0.1:")
+	},
 }
 
 // Hub manages all connected WebSocket clients and broadcasts messages.

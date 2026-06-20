@@ -212,7 +212,13 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   }
 
   if (name === 'report') {
-    const result = JSON.parse(args.result)
+    let result
+    try {
+      result = JSON.parse(args.result)
+    } catch (e) {
+      console.error('[coordinator] ERROR: report called with invalid JSON:', e.message)
+      return { content: [{ type: 'text', text: `Error: invalid JSON in result — ${e.message}` }] }
+    }
     const runId = result.run_id || process.env.ANTON_RUN_ID || 'unknown'
     if (runId === 'unknown') {
       console.error('[coordinator] WARNING: report called with no run_id — results will be orphaned. Agent must include run_id in result JSON.')
@@ -259,6 +265,9 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   if (name === 'coordinator_finish') {
     const runId = process.env.ANTON_RUN_ID || 'unknown'
+    if (runId === 'unknown') {
+      console.error('[coordinator] WARNING: coordinator_finish called with no ANTON_RUN_ID — run status will not be updated.')
+    }
     const now = Math.floor(Date.now() / 1000)
     db.prepare(`UPDATE runs SET status = 'done', completed_at = ? WHERE id = ?`).run(now, runId)
     return {

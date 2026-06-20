@@ -40,6 +40,13 @@ check claude  "https://claude.ai/download"
 check node    "https://nodejs.org"
 check npm     "https://nodejs.org"
 
+# ── Enforce Node >= 20 ────────────────────────────────────────────────────────
+if ! node -e "if(+process.version.slice(1).split('.')[0]<20)process.exit(1)" 2>/dev/null; then
+  echo "ERROR: Node.js 20+ required. Current version: $(node --version)"
+  echo "Install the latest LTS: https://nodejs.org"
+  exit 1
+fi
+
 # ── Download binary ──────────────────────────────────────────────────────────
 echo "Installing Anton $VERSION for $PLATFORM..."
 mkdir -p "$INSTALL_DIR"
@@ -69,7 +76,11 @@ echo "Installing MCP dependencies..."
 if ! command -v anton &>/dev/null; then
   echo ""
   echo "NOTE: Add $INSTALL_DIR to your PATH:"
-  echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc && source ~/.zshrc"
+  case "$SHELL" in
+    */zsh)  echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc && source ~/.zshrc" ;;
+    */bash) echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc" ;;
+    *)      echo "  export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
+  esac
 fi
 
 echo ""

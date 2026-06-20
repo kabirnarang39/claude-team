@@ -5,13 +5,16 @@ dev: ## Start Anton with live reload
 	go run main.go
 
 test: ## Run all tests
-	go test ./...
+	go test -race ./...
 
 build: ## Build binary for current platform
 	go build -o anton .
 
-install: ## Install binary to /usr/local/bin
-	go build -o /usr/local/bin/anton .
+INSTALL_DIR ?= $(HOME)/.local/bin
+
+install: ## Install binary to ~/.local/bin (override: make install INSTALL_DIR=/usr/local/bin)
+	mkdir -p $(INSTALL_DIR)
+	go build -o $(INSTALL_DIR)/anton .
 
 clean: ## Remove built binary and runtime state
 	rm -f anton

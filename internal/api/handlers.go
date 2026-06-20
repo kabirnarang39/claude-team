@@ -143,6 +143,10 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRunDetail(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+	if strings.Contains(id, "..") || strings.Contains(id, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
 	if s.cfg.Store == nil {
 		http.Error(w, "not configured", 500)
 		return

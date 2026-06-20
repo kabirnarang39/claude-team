@@ -322,6 +322,116 @@ func TestRunFilesEndpoints(t *testing.T) {
 			t.Fatalf("expected 400 for dotdot in filename, got %d", w.Code)
 		}
 	})
+
+	t.Run("path traversal blocked (encoded dotdot in run id, files list)", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/%2e%2e%2f%2e%2e%2fetc/files", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != 400 {
+			t.Fatalf("expected 400 for dotdot in run id, got %d", w.Code)
+		}
+	})
+
+	t.Run("path traversal blocked (encoded dotdot in run id, single file)", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/%2e%2e%2f%2e%2e%2fetc/files/passwd", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != 400 {
+			t.Fatalf("expected 400 for dotdot in run id, got %d", w.Code)
+		}
+	})
+}
+
+func TestRunDetailEndpoint(t *testing.T) {
+	dir := t.TempDir()
+	db, err := store.Open(filepath.Join(dir, "state.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	if err := db.CreateRunWithID("anton-detail-test", "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:   hub,
+		UIDir: dir,
+		Store: db,
+	})
+	handler := srv.Handler()
+
+	t.Run("existing run returns 200", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/anton-detail-test", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != 200 {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body)
+		}
+		var result map[string]any
+		if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+			t.Fatal(err)
+		}
+		if result["id"] != "anton-detail-test" {
+			t.Errorf("got id %v, want anton-detail-test", result["id"])
+		}
+	})
+
+	t.Run("path traversal blocked in run id", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/%2e%2e%2f%2e%2e%2fetc", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != 400 {
+			t.Fatalf("expected 400 for dotdot in run id, got %d", w.Code)
+		}
+	})
+}
+
+func TestTaskEndpoint(t *testing.T) {
+	dir := t.TempDir()
+	db, err := store.Open(filepath.Join(dir, "state.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:        hub,
+		UIDir:      dir,
+		Store:      db,
+		RuntimeDir: dir,
+	})
+	handler := srv.Handler()
+
+	t.Run("valid task returns 202 with run_id", func(t *testing.T) {
+		body := `{"text":"build user auth","workflow":"feature-build"}`
+		req := httptest.NewRequest("POST", "/api/task", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != http.StatusAccepted {
+			t.Fatalf("expected 202, got %d: %s", w.Code, w.Body)
+		}
+		var result map[string]string
+		if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+			t.Fatal(err)
+		}
+		if result["run_id"] == "" {
+			t.Error("expected non-empty run_id in response")
+		}
+	})
+
+	t.Run("empty body returns 400", func(t *testing.T) {
+		req := httptest.NewRequest("POST", "/api/task", strings.NewReader("{bad json"))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		if w.Code != 400 {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+	})
 }
 
 func TestRunsEndpointNoStore(t *testing.T) {

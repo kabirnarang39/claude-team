@@ -14,7 +14,7 @@ go run main.go          # Anton running at http://localhost:3000
 Run tests before opening a PR:
 
 ```bash
-go test ./...
+go test -race ./...
 ```
 
 ## Project Layout
@@ -70,7 +70,7 @@ Roles are agent system prompts in `roles/`. Each file defines how a specialist a
 ## Pull Request Guidelines
 
 - One logical change per PR
-- `go test ./...` must pass
+- `go test -race ./...` must pass
 - New handlers need a corresponding test in `internal/api/server_test.go`
 - Keep the dashboard vanilla JS — no build toolchain
 

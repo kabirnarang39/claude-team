@@ -42,7 +42,7 @@ claude
 
 Open `http://localhost:3000` — watch 11 specialists work through planning, architecture, engineering, QA, and DevOps. Live.
 
-> **First time?** Run `anton --check` to confirm setup. **Browser dispatch:** Enter a task at `http://localhost:3000`, click ▶ Dispatch, paste into Claude Code.
+> **First time?** Run `anton --check` to confirm setup. Run `anton --demo` to preview the dashboard with a sample completed run — no Claude Code needed. **Browser dispatch:** Enter a task at `http://localhost:3000`, click ▶ Dispatch, paste into Claude Code.
 
 ---
 
@@ -262,6 +262,8 @@ Usage of anton:
 - [Claude Code](https://claude.ai/download) — active subscription
 - Node.js 20+
 - Go 1.22+ (build from source only)
+
+> **Platform support:** macOS arm64/amd64, Linux amd64. Linux arm64 (Graviton, Raspberry Pi) not yet supported — [upvote the issue](https://github.com/kabirnarang39/claude-team/issues).
 
 ---
 
