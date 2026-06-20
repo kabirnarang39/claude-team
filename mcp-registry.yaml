@@ -1,0 +1,178 @@
+mcps:
+  # ── Project Management ──────────────────────────────
+  atlassian-rovo:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-atlassian"]
+    description: Jira tickets, Confluence docs, sprints
+
+  linear:
+    command: npx
+    args: ["-y", "@linear/mcp-server"]
+    env:
+      LINEAR_API_KEY: "${LINEAR_API_KEY}"
+    description: Linear issues, projects, cycles
+
+  notion:
+    command: npx
+    args: ["-y", "@notionhq/mcp-server"]
+    env:
+      NOTION_TOKEN: "${NOTION_TOKEN}"
+    description: Notion pages, databases, docs
+
+  clickup:
+    command: npx
+    args: ["-y", "@clickup/mcp-server"]
+    env:
+      CLICKUP_TOKEN: "${CLICKUP_TOKEN}"
+    description: ClickUp tasks, spaces, goals
+
+  # ── Version Control ─────────────────────────────────
+  github:
+    command: npx
+    args: ["-y", "@github/mcp-server"]
+    env:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+    description: PRs, issues, code search, actions
+
+  gitlab:
+    command: npx
+    args: ["-y", "@gitlab/mcp-server"]
+    env:
+      GITLAB_TOKEN: "${GITLAB_TOKEN}"
+    description: MRs, pipelines, issues
+
+  # ── Design ──────────────────────────────────────────
+  figma:
+    command: npx
+    args: ["-y", "@figma/mcp-server"]
+    env:
+      FIGMA_TOKEN: "${FIGMA_TOKEN}"
+    description: Figma files, components, design tokens
+
+  # ── Databases ───────────────────────────────────────
+  postgres:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-postgres"]
+    env:
+      DATABASE_URL: "${DATABASE_URL}"
+    description: PostgreSQL query and schema inspection
+
+  mysql:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-mysql"]
+    env:
+      MYSQL_URL: "${MYSQL_URL}"
+    description: MySQL / MariaDB
+
+  mongodb:
+    command: npx
+    args: ["-y", "@mongodb-js/mcp-server-mongodb"]
+    env:
+      MONGODB_URI: "${MONGODB_URI}"
+    description: MongoDB collections, aggregations
+
+  redis:
+    command: npx
+    args: ["-y", "@redis/mcp-server"]
+    env:
+      REDIS_URL: "${REDIS_URL}"
+    description: Redis keys, pub/sub, streams
+
+  supabase:
+    command: npx
+    args: ["-y", "@supabase/mcp-server-supabase"]
+    env:
+      SUPABASE_URL: "${SUPABASE_URL}"
+      SUPABASE_KEY: "${SUPABASE_KEY}"
+    description: Supabase DB, auth, storage, edge functions
+
+  sqlite:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-sqlite", "${SQLITE_PATH}"]
+    description: Local SQLite file access
+
+  # ── Cloud & Deploy ───────────────────────────────────
+  vercel:
+    command: npx
+    args: ["-y", "@vercel/mcp-server"]
+    env:
+      VERCEL_TOKEN: "${VERCEL_TOKEN}"
+    description: Deployments, env vars, logs, domains
+
+  cloudflare:
+    command: npx
+    args: ["-y", "@cloudflare/mcp-server-cloudflare"]
+    env:
+      CLOUDFLARE_TOKEN: "${CLOUDFLARE_TOKEN}"
+    description: Workers, KV, D1, R2, DNS
+
+  aws:
+    command: npx
+    args: ["-y", "@aws/mcp-server"]
+    env:
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      AWS_REGION: "${AWS_REGION}"
+    description: S3, Lambda, EC2, CloudFormation
+
+  # ── Testing & Browser ────────────────────────────────
+  playwright:
+    command: npx
+    args: ["-y", "@playwright/mcp"]
+    description: Browser automation, E2E testing, screenshots
+
+  # ── Observability ────────────────────────────────────
+  sentry:
+    command: npx
+    args: ["-y", "@sentry/mcp-server"]
+    env:
+      SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"
+      SENTRY_ORG: "${SENTRY_ORG}"
+    description: Errors, performance, releases, issues
+
+  datadog:
+    command: npx
+    args: ["-y", "@datadog/mcp-server"]
+    env:
+      DD_API_KEY: "${DD_API_KEY}"
+      DD_APP_KEY: "${DD_APP_KEY}"
+    description: Metrics, logs, traces, monitors
+
+  # ── Files & Search ───────────────────────────────────
+  filesystem:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-filesystem", "."]
+    description: Read/write local project files
+
+  google-drive:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-gdrive"]
+    description: Google Docs, Sheets, Slides, Drive
+
+  brave-search:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-brave-search"]
+    env:
+      BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    description: Web search for research and docs lookup
+
+  tavily:
+    command: npx
+    args: ["-y", "@tavily/mcp-server"]
+    env:
+      TAVILY_API_KEY: "${TAVILY_API_KEY}"
+    description: AI-optimised web search and RAG
+
+  # ── Communication ────────────────────────────────────
+  slack:
+    command: npx
+    args: ["-y", "@anthropic-ai/mcp-server-slack"]
+    env:
+      SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"
+    description: Post messages, read channels, DMs
+
+  # ── DevOps ───────────────────────────────────────────
+  docker:
+    command: npx
+    args: ["-y", "@docker/mcp-server"]
+    description: Container management, images, compose

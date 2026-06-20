@@ -1,0 +1,54 @@
+name: feature-build
+description: Full feature development cycle — planning through deployment
+version: "1.0"
+
+phases:
+  - id: planning
+    coordinator: planning-coordinator
+    sequential:
+      - requirements-analyst
+      - tech-writer
+    outputs:
+      - acceptance-criteria.md
+      - prd.md
+
+  - id: architecture
+    coordinator: engineering-coordinator
+    sequential:
+      - senior-architect
+      - api-designer
+    outputs:
+      - adr.md
+      - openapi.yaml
+    when: "phases.planning.status == 'done'"
+
+  - id: engineering
+    coordinator: engineering-coordinator
+    parallel:
+      - backend-engineer
+      - frontend-engineer
+      - dba
+    outputs:
+      - implementation/
+    when: "phases.architecture.status == 'done'"
+
+  - id: qa
+    coordinator: qa-coordinator
+    sequential:
+      - qa-engineer
+      - security-reviewer
+      - e2e-tester
+    outputs:
+      - qa-report.md
+      - security-report.md
+    when: "phases.engineering.status == 'done'"
+
+  - id: devops
+    coordinator: devops-coordinator
+    sequential:
+      - code-reviewer
+      - devops-engineer
+    outputs:
+      - review-report.md
+      - implementation/
+    when: "phases.qa.status == 'done'"

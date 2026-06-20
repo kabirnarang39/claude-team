@@ -1,4 +1,23 @@
-node_modules/
+# Runtime state
 .claude-team/
-ui/dist/
-*.db
+
+# Built binary
+anton
+claude-team-server
+claude-team
+
+# SDD progress ledger
+.superpowers/
+
+# Coordinator MCP deps
+mcp/node_modules/
+mcp/package-lock.json
+
+# Go test cache
+*.test
+
+# Claude Code session data
+.claude/
+
+# macOS
+.DS_Store

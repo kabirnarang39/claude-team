@@ -1,0 +1,10 @@
+{
+  "name": "anton-coordinator",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "team-coordinator.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^11.0.0"
+  }
+}

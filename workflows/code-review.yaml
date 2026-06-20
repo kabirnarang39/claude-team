@@ -1,0 +1,23 @@
+name: code-review
+description: PR review pipeline — architecture, security, quality
+version: "1.0"
+
+phases:
+  - id: review
+    coordinator: engineering-coordinator
+    parallel:
+      - senior-architect
+      - security-reviewer
+      - code-reviewer
+    outputs:
+      - architecture-review.md
+      - security-report.md
+      - review-report.md
+
+  - id: verdict
+    coordinator: planning-coordinator
+    sequential:
+      - tech-writer
+    outputs:
+      - verdict.md
+    when: "phases.review.status == 'done'"

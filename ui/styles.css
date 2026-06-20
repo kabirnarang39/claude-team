@@ -1,0 +1,406 @@
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --border: #2a2a2a;
+  --text: #e8e8e8;
+  --muted: #555;
+  --accent: #7c6af7;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --font: 'Cascadia Code','Fira Code','SF Mono','Menlo',monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  font-size:13px;
+  height:100%;
+  overflow:hidden;
+}
+
+.shell{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+
+/* ── Header ── */
+.hdr{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:9px 18px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  flex-shrink:0;
+}
+.logo{
+  font-size:17px;
+  font-weight:700;
+  color:var(--accent);
+  letter-spacing:-0.5px;
+}
+.tagline{
+  color:var(--muted);
+  font-size:10px;
+  flex:1;
+  letter-spacing:0.03em;
+}
+.wf-select{
+  background:var(--bg);
+  color:var(--text);
+  border:1px solid var(--border);
+  padding:4px 8px;
+  border-radius:4px;
+  font-family:var(--font);
+  font-size:11px;
+}
+.ws-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--muted);
+  flex-shrink:0;
+  position:relative;
+}
+.ws-dot.connected{background:var(--green)}
+.ws-dot.connected::after{
+  content:'';
+  position:absolute;
+  inset:-3px;
+  border-radius:50%;
+  border:1px solid var(--green);
+  opacity:0.4;
+  animation:ping 2s ease-in-out infinite;
+}
+.ws-dot.error{background:var(--red)}
+@keyframes ping{
+  0%,100%{transform:scale(1);opacity:.4}
+  50%{transform:scale(1.6);opacity:0}
+}
+.btn{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:5px 14px;
+  border-radius:4px;
+  cursor:pointer;
+  font-family:var(--font);
+  font-size:11px;
+  font-weight:600;
+  flex-shrink:0;
+}
+.btn:hover{opacity:.85}
+
+/* ── Layout ── */
+.layout{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  flex:1;
+  overflow:hidden;
+  min-height:0;
+}
+
+/* ── Sidebar ── */
+.sidebar{
+  border-right:1px solid var(--border);
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+}
+.lbl{
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  display:block;
+  margin-bottom:3px;
+}
+.textarea{
+  background:var(--surface);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:7px 8px;
+  font-family:var(--font);
+  font-size:11px;
+  resize:vertical;
+  min-height:82px;
+  width:100%;
+  line-height:1.5;
+}
+.textarea:focus{outline:1px solid var(--accent)}
+.tinput{
+  background:var(--surface);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:5px 8px;
+  font-family:var(--font);
+  font-size:11px;
+  width:100%;
+}
+.tinput:focus{outline:1px solid var(--accent)}
+.dropzone{
+  border:1px dashed var(--border);
+  border-radius:4px;
+  padding:12px;
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+}
+.dropzone.over{border-color:var(--accent);color:var(--accent)}
+.sec-lbl{
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.run-list{display:flex;flex-direction:column;gap:4px}
+.run-item{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:6px 9px;
+  font-size:10px;
+  cursor:pointer;
+}
+.run-item:hover{border-color:var(--accent)}
+.run-item.active{border-color:var(--accent)}
+.run-item .ri-name{color:var(--text)}
+.run-item .ri-meta{color:var(--muted);margin-top:1px}
+.status-badge{
+  display:inline-block;
+  width:6px;height:6px;
+  border-radius:50%;
+  margin-right:4px;
+  vertical-align:middle;
+}
+
+/* ── Main panel ── */
+.main{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+}
+
+/* ── Phase bar ── */
+.phase-bar{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:9px 18px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  flex-shrink:0;
+  flex-wrap:wrap;
+  min-height:38px;
+}
+.phase-pill{
+  padding:2px 9px;
+  border-radius:10px;
+  font-size:10px;
+  border:1px solid var(--border);
+  color:var(--muted);
+  white-space:nowrap;
+}
+.phase-pill.running{border-color:var(--amber);color:var(--amber)}
+.phase-pill.done{border-color:var(--green);color:var(--green)}
+.phase-pill.pending{border-color:var(--border);color:var(--muted)}
+.phase-pill.failed{border-color:var(--red);color:var(--red)}
+.phase-arrow{color:var(--muted);font-size:10px;opacity:.5}
+
+/* ── Command banner ── */
+.cmd-banner{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 18px;
+  background:#0e0b1e;
+  border-bottom:1px solid var(--accent);
+  flex-shrink:0;
+  flex-wrap:wrap;
+}
+.cmd-label{
+  font-size:10px;
+  color:var(--accent);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.cmd-text{
+  flex:1;
+  font-family:var(--font);
+  font-size:11px;
+  color:var(--text);
+  min-width:0;
+  overflow-x:auto;
+  white-space:nowrap;
+  user-select:all;
+}
+.cmd-copy{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:3px 10px;
+  border-radius:3px;
+  cursor:pointer;
+  font-family:var(--font);
+  font-size:10px;
+  font-weight:600;
+  flex-shrink:0;
+}
+.cmd-copy:hover{opacity:.85}
+.cmd-copy.copied{background:var(--green)}
+.cmd-dismiss{
+  background:none;
+  color:var(--muted);
+  border:none;
+  cursor:pointer;
+  font-size:14px;
+  line-height:1;
+  padding:0 2px;
+  flex-shrink:0;
+}
+.cmd-dismiss:hover{color:var(--text)}
+
+/* ── Agent tree ── */
+.tree-wrap{
+  flex:1;
+  overflow:auto;
+  padding:18px 22px;
+  position:relative;
+}
+
+/* SVG */
+.node-rect{fill:var(--surface);stroke:var(--border);stroke-width:1.5}
+.node-rect.done{stroke:var(--green);fill:#081508}
+.node-rect.running{stroke:var(--amber);fill:#181000}
+.node-rect.blocked{stroke:var(--red);fill:#180808}
+.node-rect.needs_context{stroke:var(--blue);fill:#080f18}
+.node-rect.pending{stroke:var(--border)}
+.node-name{
+  fill:var(--text);
+  font-family:var(--font);
+  font-size:10.5px;
+}
+.node-status-txt{
+  fill:var(--muted);
+  font-family:var(--font);
+  font-size:9.5px;
+}
+.node-status-txt.done{fill:var(--green)}
+.node-status-txt.running{fill:var(--amber)}
+.node-status-txt.blocked{fill:var(--red)}
+.phase-label{
+  fill:var(--muted);
+  font-family:var(--font);
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.tree-edge{stroke:var(--border);stroke-width:1;fill:none;stroke-dasharray:4 3;opacity:.5}
+
+/* Signal orbs — data flow made visible */
+.signal-orb{
+  fill:var(--accent);
+  opacity:0.85;
+  filter:drop-shadow(0 0 3px var(--accent));
+}
+
+/* ── Active card ── */
+.active-card{
+  border-top:1px solid var(--border);
+  padding:12px 18px;
+  background:var(--surface);
+  flex-shrink:0;
+}
+.ac-agent{
+  font-size:12px;
+  font-weight:600;
+  color:var(--amber);
+  margin-bottom:3px;
+}
+.ac-summary{
+  color:var(--text);
+  font-size:11px;
+  line-height:1.5;
+  margin-bottom:7px;
+}
+.ac-meta{
+  display:flex;
+  gap:14px;
+  color:var(--muted);
+  font-size:10px;
+  margin-bottom:5px;
+}
+.ac-sources{display:flex;flex-wrap:wrap;gap:5px}
+.src-tag{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:1px 6px;
+  font-size:9px;
+  color:var(--blue);
+  max-width:160px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  display:inline-block;
+  text-decoration:none;
+}
+.src-tag:hover{border-color:var(--blue)}
+
+@media (prefers-reduced-motion:reduce){
+  .ws-dot.connected::after,.signal-orb{animation:none!important}
+  .ws-dot.connected::after{opacity:0}
+}
+
+/* ── Offline banner ── */
+.offline-banner{
+  background:#1a0808;
+  border-bottom:1px solid var(--red);
+  color:var(--red);
+  font-size:11px;
+  padding:7px 18px;
+  text-align:center;
+  flex-shrink:0;
+}
+.offline-banner code{
+  background:rgba(239,68,68,.15);
+  padding:1px 5px;
+  border-radius:3px;
+  font-family:var(--font);
+}
+
+/* ── Output viewer ── */
+.ac-output{margin-top:8px}
+.ac-output-label{
+  font-size:9px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  margin-bottom:4px;
+}
+.ac-output-content{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:8px 10px;
+  font-family:var(--font);
+  font-size:10px;
+  color:var(--text);
+  max-height:180px;
+  overflow-y:auto;
+  overflow-x:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
+}

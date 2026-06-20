@@ -1,0 +1,28 @@
+name: bug-fix
+description: Triage, root cause analysis, fix, verify
+version: "1.0"
+
+phases:
+  - id: triage
+    coordinator: engineering-coordinator
+    sequential:
+      - debugger
+    outputs:
+      - rca.md
+
+  - id: fix
+    coordinator: engineering-coordinator
+    parallel:
+      - backend-engineer
+      - frontend-engineer
+    outputs:
+      - implementation/
+    when: "phases.triage.status == 'done'"
+
+  - id: verify
+    coordinator: qa-coordinator
+    sequential:
+      - qa-engineer
+    outputs:
+      - qa-report.md
+    when: "phases.fix.status == 'done'"

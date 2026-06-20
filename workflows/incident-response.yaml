@@ -1,0 +1,37 @@
+name: incident-response
+description: Alert to post-mortem — triage, hotfix, verify, document
+version: "1.0"
+
+phases:
+  - id: rca
+    coordinator: engineering-coordinator
+    sequential:
+      - debugger
+    outputs:
+      - rca.md
+
+  - id: hotfix
+    coordinator: engineering-coordinator
+    sequential:
+      - backend-engineer
+    outputs:
+      - implementation/
+    when: "phases.rca.status == 'done'"
+
+  - id: verify
+    coordinator: qa-coordinator
+    sequential:
+      - qa-engineer
+      - security-reviewer
+    outputs:
+      - qa-report.md
+      - security-report.md
+    when: "phases.hotfix.status == 'done'"
+
+  - id: postmortem
+    coordinator: planning-coordinator
+    sequential:
+      - tech-writer
+    outputs:
+      - postmortem.md
+    when: "phases.verify.status == 'done'"

@@ -1,0 +1,21 @@
+name: architecture-review
+description: Design doc review — architecture, security, ADR output
+version: "1.0"
+
+phases:
+  - id: review
+    coordinator: engineering-coordinator
+    parallel:
+      - senior-architect
+      - security-reviewer
+    outputs:
+      - architecture-review.md
+      - security-report.md
+
+  - id: adr
+    coordinator: engineering-coordinator
+    sequential:
+      - senior-architect
+    outputs:
+      - adr.md
+    when: "phases.review.status == 'done'"

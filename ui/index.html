@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anton</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell">
+<div class="offline-banner" id="offline-banner" style="display:none">
+  Server offline — start Anton with <code>go run main.go</code> then refresh
+</div>
+
+  <header class="hdr">
+    <span class="logo">Anton</span>
+    <span class="tagline">Son of Anton — for real this time</span>
+    <select class="wf-select" id="wf-select" aria-label="Workflow">
+      <option value="feature-build">feature-build</option>
+    </select>
+    <div class="ws-dot" id="ws-dot" title="WebSocket connection"></div>
+    <button class="btn" id="dispatch-btn">&#9654; Dispatch</button>
+  </header>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div>
+        <label class="lbl" for="task-in">Task</label>
+        <textarea class="textarea" id="task-in" placeholder="Describe what to build, fix, or review…"></textarea>
+      </div>
+      <div>
+        <label class="lbl" for="jira-in">Jira / Linear URL</label>
+        <input class="tinput" id="jira-in" type="url" placeholder="https://…/PROJ-123">
+      </div>
+      <div class="dropzone" id="drop-zone">Drop .md or .pdf context here</div>
+      <div class="sec-lbl">Run History</div>
+      <div class="run-list" id="run-history"></div>
+    </aside>
+
+    <section class="main">
+      <div class="phase-bar" id="phase-bar"></div>
+
+      <div class="cmd-banner" id="cmd-banner" style="display:none">
+        <span class="cmd-label">Run in Claude Code</span>
+        <code class="cmd-text" id="cmd-text"></code>
+        <button class="cmd-copy" id="cmd-copy" onclick="copyCmd()" title="Copy">Copy</button>
+        <button class="cmd-dismiss" onclick="dismissCmd()" title="Dismiss">✕</button>
+      </div>
+
+      <div class="tree-wrap">
+        <svg id="tree-svg" width="100%" aria-label="Agent execution tree"></svg>
+      </div>
+      <div class="active-card" id="active-card" style="display:none">
+        <div class="ac-agent" id="ac-name"></div>
+        <div class="ac-summary" id="ac-summary"></div>
+        <div class="ac-meta">
+          <span id="ac-conf"></span>
+          <span id="ac-tokens"></span>
+        </div>
+        <div class="ac-sources" id="ac-sources"></div>
+        <div class="ac-output" id="ac-output" style="display:none">
+          <div class="ac-output-label">Output file</div>
+          <pre class="ac-output-content" id="ac-output-content"></pre>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
