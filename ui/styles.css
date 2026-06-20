@@ -39,12 +39,6 @@ html,body{
   background:var(--surface);
   flex-shrink:0;
 }
-.logo{
-  font-size:17px;
-  font-weight:700;
-  color:var(--accent);
-  letter-spacing:-0.5px;
-}
 .tagline{
   color:var(--muted);
   font-size:10px;

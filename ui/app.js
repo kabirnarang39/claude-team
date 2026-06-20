@@ -297,58 +297,15 @@ function renderTreeSimple() {
       return
     }
 
-    if (!noRuns) {
-      svg.setAttribute('viewBox', `0 0 ${w} 80`)
-      svg.setAttribute('height', '80')
-      svg.innerHTML = `
-        <text x="${w/2}" y="44" text-anchor="middle"
-          style="fill:var(--muted);font-family:var(--font);font-size:11px">
-          Select a run from the sidebar to view its agent tree.</text>`
-      return
-    }
+    // noRuns case: onboarding HTML card is visible; tree-wrap is hidden — nothing to render
+    if (noRuns) return
 
-    // First-run getting-started guide
-    svg.setAttribute('viewBox', `0 0 ${w} 280`)
-    svg.setAttribute('height', '280')
-    const lx = 40, col2 = w / 2 + 20
+    svg.setAttribute('viewBox', `0 0 ${w} 80`)
+    svg.setAttribute('height', '80')
     svg.innerHTML = `
-      <text x="${lx}" y="32" style="fill:var(--fg);font-family:var(--font);font-size:14px;font-weight:700">
-        Get started in 3 steps</text>
-
-      <rect x="${lx}" y="50" width="${w/2 - 60}" height="68" rx="6"
-        style="fill:var(--panel);stroke:var(--border);stroke-width:1"/>
-      <text x="${lx+16}" y="72" style="fill:var(--accent);font-family:var(--font);font-size:11px;font-weight:700">
-        1  Open Claude Code here</text>
-      <text x="${lx+16}" y="92" style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        cd your-project &amp;&amp; claude</text>
-      <text x="${lx+16}" y="108" style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        Anton auto-configures MCP on first run.</text>
-
-      <rect x="${col2}" y="50" width="${w/2 - 60}" height="68" rx="6"
-        style="fill:var(--panel);stroke:var(--border);stroke-width:1"/>
-      <text x="${col2+16}" y="72" style="fill:var(--accent);font-family:var(--font);font-size:11px;font-weight:700">
-        2  Enter a task above</text>
-      <text x="${col2+16}" y="92" style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        Describe what to build, fix, or review.</text>
-      <text x="${col2+16}" y="108" style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        Pick a workflow. Click ▶ Dispatch.</text>
-
-      <rect x="${lx}" y="136" width="${w - 80}" height="68" rx="6"
-        style="fill:var(--panel);stroke:var(--border);stroke-width:1"/>
-      <text x="${lx+16}" y="158" style="fill:var(--accent);font-family:var(--font);font-size:11px;font-weight:700">
-        3  Paste the command into Claude Code</text>
-      <text x="${lx+16}" y="178" style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        /team-dispatch build user auth with JWT tokens</text>
-      <text x="${lx+16}" y="194" style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        Watch your agent team appear in this dashboard.</text>
-
-      <text x="${w/2}" y="238" text-anchor="middle"
-        style="fill:var(--muted);font-family:var(--font);font-size:10px">
-        Tip: run  anton --check  in your project to verify setup.</text>
-
-      <text x="${w/2}" y="262" text-anchor="middle"
-        style="fill:var(--muted);font-family:var(--font);font-size:9px;opacity:0.6">
-        github.com/kabirnarang39/claude-team</text>`
+      <text x="${w/2}" y="44" text-anchor="middle"
+        style="fill:var(--muted);font-family:var(--font);font-size:11px">
+        Select a run from the sidebar to view its agent tree.</text>`
     return
   }
 
