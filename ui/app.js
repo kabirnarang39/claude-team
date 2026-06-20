@@ -6,6 +6,12 @@ const state = {
   phases: [],
   agents: [],
   workflows: [],
+  reviews: [],
+}
+
+const REVIEW_AFTER_PHASE = {
+  'plan-review': 'planning',
+  'task-review': 'architecture',
 }
 
 function updateOnboardingVisibility() {
@@ -60,6 +66,12 @@ async function refreshActiveRun() {
       const prev = state.agents.find(a => a.agent === fresh.agent && a.phase === fresh.phase)
       return (prev && prev.tokens) ? { ...fresh, tokens: prev.tokens } : fresh
     })
+    state.reviews = (detail.reviews || []).map(r => ({
+      gate: r.gate,
+      status: r.status,
+      summary: r.summary || '',
+    }))
+    renderReviewBanner()
     renderPhaseBar()
     if (state.agents.length !== prevCount) {
       renderTreeSimple()
@@ -86,6 +98,8 @@ function connectWS() {
     try {
       const evt = JSON.parse(e.data)
       if (evt.type === 'agent_result') { onAgentResult(evt.payload); loadStats() }
+      if (evt.type === 'review_pending') { onReviewPending(evt.payload) }
+      if (evt.type === 'review_resolved') { onReviewResolved(evt.payload) }
     } catch (_) {}
   }
 }
@@ -155,6 +169,46 @@ function mapResult(r) {
   }
 }
 
+function onReviewPending(payload) {
+  if (!state.activeRun || state.activeRun.id !== payload.run_id) return
+  const idx = state.reviews.findIndex(r => r.gate === payload.gate)
+  const item = { gate: payload.gate, status: 'pending', summary: payload.summary || '' }
+  if (idx >= 0) state.reviews[idx] = item
+  else state.reviews.push(item)
+  renderReviewBanner()
+  renderPhaseBar()
+}
+
+function onReviewResolved(payload) {
+  if (!state.activeRun || state.activeRun.id !== payload.run_id) return
+  const r = state.reviews.find(r => r.gate === payload.gate)
+  if (r) r.status = payload.status
+  renderReviewBanner()
+  renderPhaseBar()
+}
+
+function renderReviewBanner() {
+  const container = document.getElementById('review-banner-container')
+  if (!container) return
+  const pending = state.reviews.find(r => r.status === 'pending')
+  if (!pending) {
+    container.style.display = 'none'
+    container.innerHTML = ''
+    return
+  }
+  const label = pending.gate === 'plan-review' ? 'PLAN REVIEW' : 'TASK REVIEW'
+  container.style.display = 'block'
+  container.innerHTML = `
+    <div class="review-banner">
+      <span class="review-banner-icon">&#9208;</span>
+      <div class="review-banner-body">
+        <span class="review-banner-title">${label} — Action required in Claude Code terminal</span>
+        ${pending.summary ? `<p class="review-banner-summary">${esc(pending.summary)}</p>` : ''}
+      </div>
+    </div>
+  `
+}
+
 // ── Data ─────────────────────────────────────────────────────────────────────
 async function loadWorkflows() {
   try {
@@ -192,6 +246,12 @@ async function loadRunDetail(runId) {
     state.activeRun = detail
     state.phases = detail.phases || []
     state.agents = (detail.results || []).map(mapResult)
+    state.reviews = (detail.reviews || []).map(r => ({
+      gate: r.gate,
+      status: r.status,
+      summary: r.summary || '',
+    }))
+    renderReviewBanner()
     renderPhaseBar()
     renderTreeSimple()
     if (state.agents.length > 0) selectAgentData(state.agents[state.agents.length - 1])
@@ -305,10 +365,27 @@ function renderRunHistory() {
 function renderPhaseBar() {
   const bar = document.getElementById('phase-bar')
   if (!state.phases.length) { bar.innerHTML = ''; return }
-  bar.innerHTML = state.phases.map((p, i) => `
-    ${i > 0 ? '<span class="phase-arrow">→</span>' : ''}
-    <span class="phase-pill ${esc(p.status || 'pending')}">${esc(p.phase_id)}</span>
-  `).join('')
+
+  const gateByPhase = {}
+  Object.entries(REVIEW_AFTER_PHASE).forEach(([gate, phase]) => {
+    // reviews ordered id ASC — last entry per gate is current state (handles reject-reloop)
+    const reviews = state.reviews.filter(r => r.gate === gate)
+    if (reviews.length) gateByPhase[phase] = reviews[reviews.length - 1]
+  })
+
+  bar.innerHTML = state.phases.map((p, i) => {
+    let html = i > 0 ? '<span class="phase-arrow">→</span>' : ''
+    html += `<span class="phase-pill ${esc(p.status || 'pending')}">${esc(p.phase_id)}</span>`
+    const review = gateByPhase[p.phase_id]
+    if (review) {
+      const cls = review.status === 'pending'  ? 'review-chip--pending'  :
+                  review.status === 'approved' ? 'review-chip--approved' : 'review-chip--rejected'
+      const lbl = review.status === 'pending'  ? '&#9208; Awaiting Review' :
+                  review.status === 'approved' ? '&#10003; Approved'      : '&#10007; Rejected'
+      html += `<span class="phase-arrow">→</span><span class="review-chip ${cls}">${lbl}</span>`
+    }
+    return html
+  }).join('')
 }
 
 function phaseOrder(p) {

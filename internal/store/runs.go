@@ -248,6 +248,26 @@ func (s *Store) GetRunDetail(runID string) (*RunDetail, error) {
 		json.Unmarshal([]byte(questions), &res.Questions)
 		r.Results = append(r.Results, res)
 	}
+
+	reviewRows, err := s.db.Query(`
+		SELECT id, run_id, gate, status, summary, feedback, created_at, COALESCE(resolved_at, 0)
+		FROM human_reviews WHERE run_id=? ORDER BY id ASC
+	`, runID)
+	if err != nil {
+		return nil, err
+	}
+	defer reviewRows.Close()
+	for reviewRows.Next() {
+		var hr HumanReview
+		if err := reviewRows.Scan(
+			&hr.ID, &hr.RunID, &hr.Gate, &hr.Status,
+			&hr.Summary, &hr.Feedback, &hr.CreatedAt, &hr.ResolvedAt,
+		); err != nil {
+			continue
+		}
+		r.Reviews = append(r.Reviews, hr)
+	}
+
 	return &r, nil
 }
 
@@ -307,6 +327,23 @@ func (s *Store) UpsertAgentResult(r AgentResult) error {
 func (s *Store) WriteTask(runtimeDir, text string) error {
 	content := "# Pending Task\n\n" + text + "\n"
 	return os.WriteFile(filepath.Join(runtimeDir, "pending-task.md"), []byte(content), 0644)
+}
+
+func (s *Store) CreateReview(runID, gate, summary string) error {
+	_, err := s.db.Exec(
+		`INSERT INTO human_reviews (run_id, gate, status, summary, created_at) VALUES (?, ?, 'pending', ?, ?)`,
+		runID, gate, summary, time.Now().Unix(),
+	)
+	return err
+}
+
+func (s *Store) ResolveReview(runID, gate, status, feedback string) error {
+	_, err := s.db.Exec(
+		`UPDATE human_reviews SET status=?, feedback=?, resolved_at=?
+		 WHERE run_id=? AND gate=? AND status='pending'`,
+		status, feedback, time.Now().Unix(), runID, gate,
+	)
+	return err
 }
 
 func randomID() string {

@@ -500,3 +500,126 @@ func TestHandleStats_nilStore(t *testing.T) {
 		t.Errorf("want {}, got %q", rec.Body.String())
 	}
 }
+
+func openTestStoreForAPI(t *testing.T) *store.Store {
+	t.Helper()
+	s, err := store.Open(t.TempDir() + "/test.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { s.Close() })
+	return s
+}
+
+func TestSignalReview(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	runID := "run-signal-test"
+	if err := db.CreateRunWithID(runID, "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:   hub,
+		UIFS:  fstest.MapFS{},
+		Store: db,
+	})
+
+	body := `{"gate":"plan-review","summary":"PRD covers auth and payments"}`
+	req := httptest.NewRequest("POST", "/api/runs/"+runID+"/signal-review", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("got %d, want 204", rec.Code)
+	}
+
+	detail, err := db.GetRunDetail(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(detail.Reviews) != 1 {
+		t.Fatalf("expected 1 review, got %d", len(detail.Reviews))
+	}
+	if detail.Reviews[0].Status != "pending" {
+		t.Errorf("status: got %q, want pending", detail.Reviews[0].Status)
+	}
+	if detail.Reviews[0].Gate != "plan-review" {
+		t.Errorf("gate: got %q, want plan-review", detail.Reviews[0].Gate)
+	}
+}
+
+func TestSignalReviewInvalidGate(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	runID := "run-invalid-gate"
+	db.CreateRunWithID(runID, "feature-build")
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{Hub: hub, UIFS: fstest.MapFS{}, Store: db})
+
+	body := `{"gate":"bad-gate","summary":"test"}`
+	req := httptest.NewRequest("POST", "/api/runs/"+runID+"/signal-review", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestResolveReview(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	runID := "run-resolve-test"
+	if err := db.CreateRunWithID(runID, "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.CreateReview(runID, "task-review", "ADR summary"); err != nil {
+		t.Fatal(err)
+	}
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{Hub: hub, UIFS: fstest.MapFS{}, Store: db})
+
+	body := `{"gate":"task-review","status":"rejected","feedback":"Add caching layer detail"}`
+	req := httptest.NewRequest("POST", "/api/runs/"+runID+"/resolve-review", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("got %d, want 204", rec.Code)
+	}
+
+	detail, err := db.GetRunDetail(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail.Reviews[0].Status != "rejected" {
+		t.Errorf("status: got %q, want rejected", detail.Reviews[0].Status)
+	}
+	if detail.Reviews[0].Feedback != "Add caching layer detail" {
+		t.Errorf("feedback: got %q", detail.Reviews[0].Feedback)
+	}
+}
+
+func TestResolveReviewInvalidStatus(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	runID := "run-invalid-status"
+	db.CreateRunWithID(runID, "feature-build")
+	db.CreateReview(runID, "plan-review", "summary")
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{Hub: hub, UIFS: fstest.MapFS{}, Store: db})
+
+	body := `{"gate":"plan-review","status":"maybe","feedback":""}`
+	req := httptest.NewRequest("POST", "/api/runs/"+runID+"/resolve-review", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
