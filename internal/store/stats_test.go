@@ -30,6 +30,12 @@ func TestGetStats_empty(t *testing.T) {
 	if stats.ParallelismSpeedup != 3.0 {
 		t.Errorf("parallelism_speedup: want 3.0, got %f", stats.ParallelismSpeedup)
 	}
+	if stats.AvgAgentsPerRun != 0.0 {
+		t.Errorf("avg_agents_per_run: want 0.0, got %f", stats.AvgAgentsPerRun)
+	}
+	if stats.AvgTokensPerRun != 0.0 {
+		t.Errorf("avg_tokens_per_run: want 0.0, got %f", stats.AvgTokensPerRun)
+	}
 }
 
 func TestGetStats_withData(t *testing.T) {
@@ -39,8 +45,12 @@ func TestGetStats_withData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.UpsertAgentResult(store.AgentResult{RunID: runID, PhaseID: "p1", Agent: "architect", Status: "done", TokensUsed: 3000})
-	s.UpsertAgentResult(store.AgentResult{RunID: runID, PhaseID: "p1", Agent: "engineer", Status: "done", TokensUsed: 5000})
+	if err := s.UpsertAgentResult(store.AgentResult{RunID: runID, PhaseID: "p1", Agent: "architect", Status: "done", TokensUsed: 3000}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpsertAgentResult(store.AgentResult{RunID: runID, PhaseID: "p1", Agent: "engineer", Status: "done", TokensUsed: 5000}); err != nil {
+		t.Fatal(err)
+	}
 
 	stats, err := s.GetStats()
 	if err != nil {
