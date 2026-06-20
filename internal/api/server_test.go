@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/kabirnarang39/claude-team/internal/api"
 	"github.com/kabirnarang39/claude-team/internal/store"
@@ -17,7 +18,7 @@ func TestStatusEndpointNoStore(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		// Store is nil — should return empty object
 	})
 
@@ -42,7 +43,7 @@ func TestWorkflowRawEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		GetWorkflowRaw: func(name string) ([]byte, error) {
 			return []byte(`{"name":"test","agents":{},"steps":[]}`), nil
 		},
@@ -69,7 +70,7 @@ func TestWorkflowSaveEndpoint(t *testing.T) {
 	saved := ""
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		SaveWorkflow: func(name, yaml string) error {
 			saved = name + ":" + yaml
 			return nil
@@ -94,7 +95,7 @@ func TestMCPRegistryEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		GetMCPList: func() []string {
 			return []string{"github", "slack"}
 		},
@@ -120,7 +121,7 @@ func TestGetSettingsEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		GetSettings: func() map[string]string {
 			return map[string]string{
 				"projectPath":  "/home/user/myapp",
@@ -151,7 +152,7 @@ func TestSaveSettingsEndpoint(t *testing.T) {
 	var saved map[string]string
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		SaveSettings: func(settings map[string]string) error {
 			saved = settings
 			return nil
@@ -188,7 +189,7 @@ func TestIngestResultEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		Store: s,
 	})
 
@@ -246,7 +247,7 @@ func TestIngestResultBadJSON(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		Store: s,
 	})
 
@@ -273,7 +274,7 @@ func TestRunFilesEndpoints(t *testing.T) {
 		Hub:        hub,
 		Store:      db,
 		RuntimeDir: filepath.Join(dir, ".claude-team"),
-		UIDir:      dir,
+		UIFS:       fstest.MapFS{},
 	})
 	handler := srv.Handler()
 
@@ -357,7 +358,7 @@ func TestRunDetailEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: dir,
+		UIFS:  fstest.MapFS{},
 		Store: db,
 	})
 	handler := srv.Handler()
@@ -399,7 +400,7 @@ func TestTaskEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:        hub,
-		UIDir:      dir,
+		UIFS:       fstest.MapFS{},
 		Store:      db,
 		RuntimeDir: dir,
 	})
@@ -438,7 +439,7 @@ func TestRunsEndpointNoStore(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIDir: "../../ui",
+		UIFS: fstest.MapFS{},
 		// Store is nil — should return empty array
 	})
 

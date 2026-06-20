@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/kabirnarang39/claude-team/internal/store"
@@ -9,7 +10,7 @@ import (
 // Config holds all dependencies the server needs.
 type Config struct {
 	Hub        *Hub
-	UIDir      string
+	UIFS       fs.FS
 	Store        *store.Store
 	RuntimeDir   string
 	WorkflowDirs []string
@@ -41,7 +42,7 @@ func NewServer(cfg Config) *Server {
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/", noCache(http.FileServer(http.Dir(s.cfg.UIDir))))
+	mux.Handle("/", noCache(http.FileServer(http.FS(s.cfg.UIFS))))
 	mux.HandleFunc("GET /api/status", s.handleStatus)
 	mux.HandleFunc("POST /api/task", s.handleTask)
 	mux.HandleFunc("GET /api/runs", s.handleRuns)
