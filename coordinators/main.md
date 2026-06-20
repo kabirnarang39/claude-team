@@ -11,7 +11,7 @@ Read workflow → dispatch sub-coordinators in sequence → synthesize results.
 1. Read task: `.claude-team/pending-task.md`
 2. Parse `Run ID:` line — **use that value as run_id**. If no `Run ID:` line found, generate: timestamp + 6 random hex chars (e.g. `anton-1750420000-a3f2c1`)
 3. Parse `Workflow:` line to find workflow name
-4. Read workflow YAML from `workflows/<name>.yaml`
+4. Read workflow YAML: check `./workflows/<name>.yaml` first (project-local); if not found, read `~/.claude/anton/workflows/<name>.yaml`
 5. Export: `export ANTON_RUN_ID=<run_id>`
 6. Create run dir: `.claude-team/runs/<run_id>/`
 7. Dispatch phases in order per workflow `phases:` list
@@ -29,7 +29,7 @@ Context files (read these first):
   - .claude-team/pending-task.md
   [list prior phase outputs]
 Run ID: <run_id>
-Standards: roles/_standards.md (read and follow — non-negotiable)
+Standards: ~/.claude/anton/roles/_standards.md (read and follow — non-negotiable)
 Report via coordinator MCP `report` tool before exiting.
 ```
 

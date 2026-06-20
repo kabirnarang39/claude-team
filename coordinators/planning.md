@@ -13,7 +13,7 @@ You are Planning Sub-Coordinator for Anton. Coordinate planning phase. Never imp
 You are requirements-analyst for Anton run <run_id>.
 Task: <task text>
 Phase: planning
-Standards: roles/_standards.md (mandatory — read first)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read first)
 Output files:
   .claude-team/runs/<run_id>/acceptance-criteria.md
   .claude-team/runs/<run_id>/unknowns.md
@@ -30,7 +30,7 @@ After requirements-analyst DONE:
 You are tech-writer for Anton run <run_id>.
 Task: write PRD from acceptance criteria.
 Phase: planning
-Standards: roles/_standards.md (mandatory — read first)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read first)
 Input: .claude-team/runs/<run_id>/acceptance-criteria.md
 Output: .claude-team/runs/<run_id>/prd.md
 MCPs: filesystem, brave-search, tavily

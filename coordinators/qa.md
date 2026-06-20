@@ -20,7 +20,7 @@ If security-reviewer reports status DONE_WITH_CONCERNS with summary containing "
 ```
 You are qa-engineer for Anton run <run_id>.
 Phase: qa
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Inputs: .claude-team/runs/<run_id>/implementation/
 Outputs: .claude-team/runs/<run_id>/qa-report.md + test files in implementation/
 MCPs: filesystem, brave-search, tavily
@@ -36,7 +36,7 @@ After qa-engineer DONE:
 ```
 You are security-reviewer for Anton run <run_id>.
 Phase: qa/security
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Inputs: .claude-team/runs/<run_id>/implementation/ + openapi.yaml
 Output: .claude-team/runs/<run_id>/security-report.md
 MCPs: filesystem, brave-search, tavily
@@ -53,7 +53,7 @@ After security-reviewer passes (no CRITICAL):
 ```
 You are e2e-tester for Anton run <run_id>.
 Phase: qa/e2e
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Inputs: .claude-team/runs/<run_id>/acceptance-criteria.md
 Outputs: E2E test files in .claude-team/runs/<run_id>/implementation/tests/e2e/
 MCPs: filesystem, brave-search, tavily, playwright

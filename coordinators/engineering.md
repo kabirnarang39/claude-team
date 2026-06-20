@@ -20,7 +20,7 @@ Optional parallel (if workflow includes):
 You are senior-architect for Anton run <run_id>.
 Task: <task text>
 Phase: engineering/architecture
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Inputs:
   .claude-team/runs/<run_id>/acceptance-criteria.md
   .claude-team/runs/<run_id>/prd.md
@@ -40,7 +40,7 @@ After architect DONE:
 You are api-designer for Anton run <run_id>.
 Task: design OpenAPI spec from ADR.
 Phase: engineering/api
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Inputs:
   .claude-team/runs/<run_id>/adr.md
   .claude-team/runs/<run_id>/architecture.md

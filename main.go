@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -21,7 +23,18 @@ import (
 	"github.com/kabirnarang39/claude-team/internal/workflow"
 )
 
+//go:embed all:ui
+var uiFS embed.FS
+
 var version = "1.0.0"
+
+func mustSubFS(f embed.FS, dir string) fs.FS {
+	sub, err := fs.Sub(f, dir)
+	if err != nil {
+		panic(err)
+	}
+	return sub
+}
 
 // mcpDir returns the expected location of the installed MCP coordinator.
 func mcpDir() string {
@@ -138,10 +151,21 @@ func runCheck(projectPath, dbPath string) {
 	}
 	check("MCP registered in project", ".claude/settings.json", mcpConfigured)
 
-	// Workflows dir
-	wfDir := filepath.Join(projectPath, "workflows")
+	// Global anton data dirs
+	home, _ := os.UserHomeDir()
+	globalAntonDir := filepath.Join(home, ".claude", "anton")
+
+	wfDir := filepath.Join(globalAntonDir, "workflows")
 	_, wfErr := os.Stat(wfDir)
 	check("workflows/ directory", wfDir, wfErr == nil)
+
+	coordDir := filepath.Join(globalAntonDir, "coordinators")
+	_, coordErr := os.Stat(coordDir)
+	check("coordinators/ directory", coordDir, coordErr == nil)
+
+	rolesDir := filepath.Join(globalAntonDir, "roles")
+	_, rolesErr := os.Stat(rolesDir)
+	check("roles/ directory", rolesDir, rolesErr == nil)
 
 	fmt.Println()
 	if ok {
@@ -280,7 +304,7 @@ func main() {
 
 	cfg := api.Config{
 		Hub:        hub,
-		UIDir:      "ui",
+		UIFS:       mustSubFS(uiFS, "ui"),
 		Store:      db,
 		RuntimeDir: runtimeDir,
 		WorkflowDirs: []string{

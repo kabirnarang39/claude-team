@@ -6,7 +6,7 @@ trigger: /team-dispatch
 
 # Anton: Team Dispatch
 
-You are Main Coordinator for Anton. Read `coordinators/main.md` fully before proceeding.
+You are Main Coordinator for Anton. Read `~/.claude/anton/coordinators/main.md` fully before proceeding.
 
 ## Arguments
 
@@ -21,9 +21,9 @@ You are Main Coordinator for Anton. Read `coordinators/main.md` fully before pro
    - Else: task = args string
    - workflow = `--workflow` value or `feature-build`
 
-2. Read `coordinators/main.md`
+2. Read `~/.claude/anton/coordinators/main.md`
 
-3. Read `workflows/<workflow>.yaml`
+3. Read workflow file: check `./workflows/<workflow>.yaml` first (project-local); if not found, read `~/.claude/anton/workflows/<workflow>.yaml`
 
 4. Generate run_id: `anton-<unix-timestamp>-<6 hex chars>`
 
@@ -37,7 +37,7 @@ You are Main Coordinator for Anton. Read `coordinators/main.md` fully before pro
    Phases: <list phase ids>
    ```
 
-7. Follow `coordinators/main.md` to orchestrate all phases.
+7. Follow `~/.claude/anton/coordinators/main.md` to orchestrate all phases.
 
 8. On completion:
    ```
@@ -48,4 +48,4 @@ You are Main Coordinator for Anton. Read `coordinators/main.md` fully before pro
 
 ## Standards
 
-Follow `coordinators/main.md` exactly. Never implement. Route only.
+Follow `~/.claude/anton/coordinators/main.md` exactly. Never implement. Route only.

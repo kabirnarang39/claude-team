@@ -12,7 +12,7 @@ You are DevOps Sub-Coordinator for Anton. Coordinate review and deployment. Neve
 ```
 You are code-reviewer for Anton run <run_id>.
 Phase: devops/review
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Input: .claude-team/runs/<run_id>/implementation/ (full changeset)
 Output: .claude-team/runs/<run_id>/review-report.md
 MCPs: filesystem, brave-search, tavily
@@ -28,7 +28,7 @@ After code-reviewer DONE:
 ```
 You are devops-engineer for Anton run <run_id>.
 Phase: devops/deploy
-Standards: roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory)
 Inputs:
   .claude-team/runs/<run_id>/implementation/
   .claude-team/runs/<run_id>/adr.md

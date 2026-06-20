@@ -72,6 +72,14 @@ cp -r "$TMP_DIR/mcp" "$MCP_DIR"
 echo "Installing MCP dependencies..."
 (cd "$MCP_DIR" && npm install --silent)
 
+# Install coordinator logic, workflows, and roles to global location
+ANTON_DIR="$HOME/.claude/anton"
+rm -rf "$ANTON_DIR"
+mkdir -p "$ANTON_DIR"
+cp -r "$TMP_DIR/coordinators" "$ANTON_DIR/"
+cp -r "$TMP_DIR/workflows" "$ANTON_DIR/"
+cp -r "$TMP_DIR/roles" "$ANTON_DIR/"
+
 # ── PATH check ───────────────────────────────────────────────────────────────
 if ! command -v anton &>/dev/null; then
   echo ""
@@ -88,7 +96,7 @@ echo "────────────────────────�
 echo "  Anton $VERSION installed successfully."
 echo "────────────────────────────────────────────────────────"
 echo ""
-echo "  1. Go to your project directory:"
+echo "  1. Go to ANY project directory:"
 echo "       cd ~/my-project"
 echo ""
 echo "  2. Start the Anton dashboard:"
