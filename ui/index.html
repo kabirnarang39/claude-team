@@ -9,14 +9,18 @@
 <body>
 <div class="shell">
 <div class="offline-banner" id="offline-banner" style="display:none">
-  Server offline — start Anton with <code>go run main.go</code> then refresh
+  Server offline — start Anton with <code>anton</code> (or <code>go run main.go</code>) then refresh
 </div>
 
   <header class="hdr">
     <span class="logo">Anton</span>
-    <span class="tagline">Son of Anton — for real this time</span>
+    <span class="tagline">Multi-agent engineering team</span>
     <select class="wf-select" id="wf-select" aria-label="Workflow">
       <option value="feature-build">feature-build</option>
+      <option value="code-review">code-review</option>
+      <option value="bug-fix">bug-fix</option>
+      <option value="incident-response">incident-response</option>
+      <option value="architecture-review">architecture-review</option>
     </select>
     <div class="ws-dot" id="ws-dot" title="WebSocket connection"></div>
     <button class="btn" id="dispatch-btn">&#9654; Dispatch</button>

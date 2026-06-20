@@ -1,26 +1,28 @@
 # Anton
 
-Multi-agent engineering team coordinator for Claude Code. Dispatch a task — Anton runs a full team of specialist AI agents (planner, architect, engineers, QA, security) and shows live progress in your browser.
+Multi-agent engineering team coordinator for Claude Code. Describe a task — Anton spins up a full team of specialist AI agents (planner, architect, engineers, QA, security reviewer) and shows live progress in your browser.
+
+[![CI](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml/badge.svg)](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml)
 
 ## Quick Start
 
-**Install:**
+**Install (macOS / Linux):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<org>/claude-team/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
 ```
 
 **Start the dashboard:**
 ```bash
 anton
-# → Anton running at http://localhost:3000
+# Anton running at http://localhost:3000
 ```
 
-**Dispatch a task** (in Claude Code, in the same directory):
+**Dispatch a task** — open Claude Code in the same project directory, then run:
 ```
 /team-dispatch build user authentication with JWT and refresh tokens
 ```
 
-Or use the browser — go to `http://localhost:3000`, enter your task, click Dispatch, then run the command shown.
+Or use the browser: go to `http://localhost:3000`, enter your task, select a workflow, click **Dispatch**, then paste the command shown into Claude Code.
 
 ## Workflows
 
@@ -34,14 +36,14 @@ Or use the browser — go to `http://localhost:3000`, enter your task, click Dis
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/download) with an active subscription or `ANTHROPIC_API_KEY`
+- [Claude Code](https://claude.ai/download) — active subscription or `ANTHROPIC_API_KEY`
 - Node.js 20+
-- Go 1.22+ (for building from source)
+- Go 1.22+ (build from source only)
 
 ## Build From Source
 
 ```bash
-git clone https://github.com/<org>/claude-team
+git clone https://github.com/kabirnarang39/claude-team
 cd claude-team
 cd mcp && npm install && cd ..
 go run main.go
@@ -72,7 +74,7 @@ You → /team-dispatch → Main Coordinator (your Claude Code session)
                         Browser dashboard   ← live agent tree
 ```
 
-Agent results are written to `.claude-team/runs/<run_id>/` and visible in the dashboard.
+Agent outputs land in `.claude-team/runs/<run_id>/` and are viewable in the dashboard.
 
 ## Troubleshooting
 

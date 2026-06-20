@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="https://github.com/<org>/claude-team"
+REPO="https://github.com/kabirnarang39/claude-team"
 VERSION="v1.0.0"
 INSTALL_DIR="$HOME/.local/bin"
 SKILL_DIR="$HOME/.claude/skills"
+MCP_DIR="$HOME/.claude/anton-mcp"
 
 # ── Detect platform ──────────────────────────────────────────────────────────
 OS="$(uname -s)"
@@ -44,18 +45,22 @@ BINARY_URL="$REPO/releases/download/$VERSION/anton-$PLATFORM"
 curl -fsSL "$BINARY_URL" -o "$INSTALL_DIR/anton"
 chmod +x "$INSTALL_DIR/anton"
 
-# ── Install skills ───────────────────────────────────────────────────────────
-echo "Installing Anton skills..."
-mkdir -p "$SKILL_DIR"
-SKILLS_URL="$REPO/releases/download/$VERSION/skills.tar.gz"
-curl -fsSL "$SKILLS_URL" | tar -xz -C "$SKILL_DIR"
+# ── Extract skills and MCP from source archive ───────────────────────────────
+echo "Installing Anton skills and MCP server..."
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-# ── Install MCP server ───────────────────────────────────────────────────────
-echo "Installing MCP server dependencies..."
-MCP_DIR="$HOME/.claude/anton-mcp"
-mkdir -p "$MCP_DIR"
-MCP_URL="$REPO/releases/download/$VERSION/mcp.tar.gz"
-curl -fsSL "$MCP_URL" | tar -xz -C "$MCP_DIR"
+SOURCE_URL="$REPO/archive/refs/tags/$VERSION.tar.gz"
+curl -fsSL "$SOURCE_URL" | tar -xz -C "$TMP_DIR" --strip-components=1
+
+# Install skills
+mkdir -p "$SKILL_DIR"
+cp "$TMP_DIR/skills/"*.md "$SKILL_DIR/"
+
+# Install MCP coordinator
+rm -rf "$MCP_DIR"
+cp -r "$TMP_DIR/mcp" "$MCP_DIR"
+echo "Installing MCP dependencies..."
 (cd "$MCP_DIR" && npm install --silent)
 
 # ── PATH check ───────────────────────────────────────────────────────────────
@@ -67,5 +72,5 @@ fi
 
 echo ""
 echo "Anton $VERSION installed successfully."
-echo "Start the dashboard: anton"
-echo "Then in Claude Code: /team-dispatch <your task>"
+echo "Start the dashboard:   anton"
+echo "Then in Claude Code:   /team-dispatch <your task>"
