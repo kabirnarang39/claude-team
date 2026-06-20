@@ -4,9 +4,13 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
+
+const wsPingInterval = 30 * time.Second
+const wsPongDeadline = 10 * time.Second
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -56,13 +60,31 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline))
+	})
 	h.Register(conn)
 	go func() {
 		defer h.Unregister(conn)
+		ticker := time.NewTicker(wsPingInterval)
+		defer ticker.Stop()
 		for {
-			if _, _, err := conn.ReadMessage(); err != nil {
-				return
+			select {
+			case <-ticker.C:
+				h.mu.Lock()
+				err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(wsPongDeadline))
+				h.mu.Unlock()
+				if err != nil {
+					return
+				}
 			}
 		}
 	}()
+	// Read loop: drives pong handler and detects disconnects.
+	conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline)) //nolint:errcheck
+	for {
+		if _, _, err := conn.ReadMessage(); err != nil {
+			return
+		}
+	}
 }

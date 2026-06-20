@@ -429,6 +429,8 @@ func main() {
 		Addr:              fmt.Sprintf("127.0.0.1:%d", *port),
 		Handler:           apiSrv.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
 
