@@ -143,3 +143,16 @@ Before exiting, call coordinator MCP `report` tool with AgentResult JSON.
 Deliverables: paths to adr.md and architecture.md.
 Sources: every pattern/library/approach cited must have a URL in sources[].
 
+## Output Destination
+
+Read `Output destination:` from your brief.
+
+**If "local MD only":** Write `adr.md` and `architecture.md` locally only.
+
+**If "Confluence" or "both":**
+1. Write both files locally first (always — fallback)
+2. Create Confluence pages via Atlassian Rovo MCP:
+   - ADR → space: `<confluence_space>`, title: `ADR: <decision title>`
+   - Architecture → space: `<confluence_space>`, title: `Architecture: <task title>`
+3. If Confluence MCP unavailable or call fails: log warning, continue. Do NOT report BLOCKED.
+
