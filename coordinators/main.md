@@ -16,6 +16,115 @@ Read workflow → dispatch sub-coordinators in sequence → synthesize results.
 6. Create run dir: `.claude-team/runs/<run_id>/`
 7. Dispatch phases in order per workflow `phases:` list
 
+## Step: Context Ingestion (before clarifying questions)
+
+Check pending-task.md for a Jira URL, Linear URL, Confluence URL, or local file path. Parse these patterns:
+- `https://*.atlassian.net/browse/PROJ-*` → Jira issue
+- `https://*.atlassian.net/wiki/*` → Confluence page
+- `https://linear.app/*/issue/*` → Linear issue
+- A file path ending in `.md`, `.txt`, `.pdf` → local file
+
+If found:
+- Jira → call `getJiraIssue` MCP (Atlassian Rovo) to read summary, description, acceptance criteria. If MCP unavailable, skip and note in approach.md.
+- Confluence → call `getConfluencePage`. If unavailable, skip.
+- Local file → read via filesystem MCP.
+- Prepend the read content to your context for the clarifying questions.
+
+## Step: Clarify & Propose (Superpowers-style)
+
+Before dispatching any sub-coordinator, run this interaction:
+
+### 1. Ask clarifying questions (one at a time, wait for each answer)
+
+Generate 3–5 targeted questions based on the task + any context read above. Always include these two:
+
+```
+Q: Do you have a Jira ticket, Linear issue, GitHub issue, or spec file for additional context?
+   (paste URL or file path — or press Enter to skip)
+```
+
+If user provides a URL/path not already read in the context ingestion step: read it now.
+
+```
+Q: Where should deliverables be written?
+   1. Local markdown files only (default — .claude-team/runs/<run_id>/)
+   2. Confluence (I'll write PRD, ADR, reports there)
+   3. Both — local and Confluence
+```
+
+If user picks 2 or 3:
+```
+Q: What is your Confluence space key? (e.g. ENG, DOCS, DEV)
+```
+
+Generate 3–5 additional questions from the task. Focus on: tech stack, target environment, constraints, existing systems, timeline. Do not ask about things already answered by the imported context.
+
+### 2. Present 2–3 approaches
+
+After all answers collected:
+
+```
+── APPROACH SELECTION ────────────────────────────────────────────
+1. [RECOMMENDED] <title>
+   Why: <reason directly tied to user's answers>
+   Trade-off: <honest downside>
+
+2. <title>
+   Why: <reason>
+   Trade-off: <downside>
+
+3. <title> (include only if genuinely distinct from 1 and 2)
+   Why: <reason>
+   Trade-off: <downside>
+
+Type 1, 2, or 3:
+─────────────────────────────────────────────────────────────────
+```
+
+Wait for user to type 1, 2, or 3. If they type anything else, re-display the prompt.
+
+### 3. Write approach.md
+
+Write `.claude-team/runs/<run_id>/approach.md`:
+
+```markdown
+# Chosen Approach
+
+## Context Source
+- <"Jira PROJ-123: <title>" or "Local file: path/to/file.md" or "No external context">
+
+## Clarifications
+- <Question>: <Answer>
+- <Question>: <Answer>
+...
+
+## Options Presented
+
+### Option <N> (chosen): <title>
+**Why recommended:** <reason>
+**Trade-off:** <downside>
+
+### Option <M>: <title>
+**Why:** <reason>
+**Trade-off:** <downside>
+
+## Output Configuration
+- Deliverable destination: <"Local MD only" or "Confluence (space: KEY)" or "Both — local + Confluence (space: KEY)">
+```
+
+### 4. Bake chosen approach into all sub-coordinator briefs
+
+When dispatching each sub-coordinator, append to the brief:
+
+```
+Chosen approach: <one-sentence summary of chosen option>
+Output destination: <"local MD" or "Confluence space: KEY" or "both">
+Confluence space key: <KEY or "n/a">
+Approach file: .claude-team/runs/<run_id>/approach.md (read for full context)
+```
+
+**Word/DOCX requests:** If user asks for Word export during clarification, respond: "Word export not supported in v2 — writing to Confluence and local MD instead."
+
 ## Dispatching Sub-Coordinators
 
 Each phase: dispatch sub-coordinator as sub-agent (Agent tool). Brief format:
