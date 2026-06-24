@@ -95,10 +95,16 @@ function updateOnboardingVisibility() {
 function toggleSection(bodyId) {
   const body = document.getElementById(bodyId)
   if (!body) return
-  body.classList.toggle('open')
-  const sectionId = bodyId.replace('-body', '')
-  const chevron = document.getElementById(sectionId + '-chevron')
-  if (chevron) chevron.textContent = body.classList.contains('open') ? '▴' : '▾'
+  const isOpen = body.classList.contains('open')
+  body.classList.toggle('open', !isOpen)
+  body.style.display = isOpen ? 'none' : 'block'
+  // Toggle chevron
+  const chevronId = bodyId.replace('-body', '-chevron')
+  const chevron = document.getElementById(chevronId)
+  if (chevron) chevron.classList.toggle('open', !isOpen)
+  // Toggle header border
+  const header = body.previousElementSibling
+  if (header) header.classList.toggle('open', !isOpen)
 }
 
 const NW = 150, NH = 44, GAP_X = 195, GAP_Y = 58, MX = 20, MY = 34
@@ -137,6 +143,8 @@ async function refreshActiveRun() {
       renderTreeSimple()
       if (state.agents.length > 0) selectAgentData(state.agents[state.agents.length - 1])
     }
+    await renderPhaseOutputs(state.activeRun.id)
+    await renderOrchestrationCard(state.activeRun.id)
     // also refresh run list to catch status changes
     const rres = await fetch('/api/runs')
     if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory(); updateOnboardingVisibility() }
@@ -304,6 +312,10 @@ async function loadRunDetail(runId) {
     renderTreeSimple()
     if (state.agents.length > 0) selectAgentData(state.agents[state.agents.length - 1])
     else document.getElementById('active-card').style.display = 'none'
+
+    // New: load orchestration card and phase outputs
+    await renderOrchestrationCard(runId)
+    await renderPhaseOutputs(runId)
   } catch (_) {}
 }
 
@@ -497,7 +509,7 @@ function selectAgentData(ag) {
   pill.textContent = ag.status
   pill.className = `ac-status-pill ${ag.status}`
 
-  document.getElementById('ac-summary').textContent = ag.summary || `${ag.status} — no output yet.`
+  document.getElementById('ac-summary').innerHTML = renderMarkdown(ag.summary || `${ag.status} — no output yet.`)
   document.getElementById('ac-conf').textContent = ag.conf ? `confidence: ${ag.conf}` : ''
   document.getElementById('ac-tokens').textContent = (ag.tokens > 0) ? fmtK(ag.tokens) + ' tokens' : ''
 
@@ -518,6 +530,161 @@ function selectAgentData(ag) {
   } else {
     delivEl.style.display = 'none'
   }
+}
+
+// ── Orchestration card ───────────────────────────────────────────────────────
+async function renderOrchestrationCard(runId) {
+  const section = document.getElementById('orchestration-section')
+  const body = document.getElementById('orchestration-body')
+  const meta = document.getElementById('orchestration-meta')
+  if (!section || !body) return
+
+  try {
+    const res = await fetch(`/api/runs/${runId}/files/approach.md`)
+    if (!res.ok) { section.style.display = 'none'; return }
+    const data = await res.json()
+    const md = data.content || ''
+    if (!md.trim()) { section.style.display = 'none'; return }
+
+    // Extract context source and output destination badges
+    const ctxMatch = md.match(/## Context Source\n- (.+)/)
+    const outMatch = md.match(/## Output Configuration\n- Deliverable destination: (.+)/)
+    const ctx = ctxMatch ? ctxMatch[1].trim() : null
+    const out = outMatch ? outMatch[1].trim() : null
+
+    if (meta) {
+      meta.innerHTML = [
+        ctx ? `<span class="orch-context-badge">📎 ${esc(ctx)}</span>` : '',
+        out ? `<span class="orch-output-badge">→ ${esc(out)}</span>` : '',
+      ].join('')
+    }
+
+    // Parse approach sections for card rendering
+    const approachMatches = [...md.matchAll(/### Option (\d+)(\s*\(chosen\))?: (.+)\n\*\*Why[^*]*:\*\* (.+)\n\*\*Trade-off:\*\* (.+)/g)]
+    let approachHtml = ''
+    if (approachMatches.length > 0) {
+      approachHtml = '<div class="orch-approaches">' +
+        approachMatches.map(m => {
+          const num = m[1], chosen = !!m[2], title = m[3], why = m[4], tradeoff = m[5]
+          return `
+            <div class="orch-approach-card${chosen ? ' chosen' : ''}">
+              <div class="orch-approach-header">
+                <span class="orch-approach-num">${esc(num)}</span>
+                <span class="orch-approach-title">${esc(title)}</span>
+                ${chosen ? '<span class="orch-chosen-badge">✓ chosen</span>' : ''}
+              </div>
+              <div class="orch-approach-why">${esc(why)}</div>
+              <div class="orch-approach-tradeoff">Trade-off: ${esc(tradeoff)}</div>
+            </div>`
+        }).join('') + '</div>'
+    } else {
+      // Fallback: render full markdown
+      approachHtml = `<div class="md-content">${renderMarkdown(md)}</div>`
+    }
+
+    // Parse clarifications Q&A
+    const clarSection = md.match(/## Clarifications\n([\s\S]*?)(?=\n## )/)?.[1] || ''
+    const clarHtml = clarSection ? `
+      <div class="orch-qa-section">
+        <div class="orch-qa-label">Clarifications</div>
+        ${clarSection.trim().split('\n').map(line => {
+          const m = line.match(/^- (.+?): (.+)$/)
+          return m ? `<div class="orch-qa-pair"><span class="orch-q">${esc(m[1])}</span><span class="orch-a">${esc(m[2])}</span></div>` : ''
+        }).join('')}
+      </div>` : ''
+
+    body.innerHTML = clarHtml + approachHtml
+    section.style.display = 'block'
+    body.classList.add('open')
+    document.getElementById('orchestration-chevron').classList.add('open')
+    document.querySelector('#orchestration-section .panel-header').classList.add('open')
+  } catch (_) {
+    section.style.display = 'none'
+  }
+}
+
+// ── Phase outputs ─────────────────────────────────────────────────────────────
+const PHASE_FILES = {
+  planning:     [{ file: 'prd.md',             label: 'PRD' }],
+  architecture: [{ file: 'adr.md',             label: 'ADR' },
+                 { file: 'architecture.md',     label: 'Architecture' }],
+  engineering:  [],
+  qa:           [{ file: 'qa-report.md',        label: 'QA Report' },
+                 { file: 'security-report.md',  label: 'Security Report' }],
+  devops:       [{ file: 'review-report.md',    label: 'Code Review' }],
+}
+
+async function renderPhaseOutputs(runId) {
+  const container = document.getElementById('phase-outputs')
+  if (!container) return
+  container.innerHTML = ''
+
+  const donePhasesWithFiles = state.phases.filter(p =>
+    p.status === 'done' && PHASE_FILES[p.phase_id] && PHASE_FILES[p.phase_id].length > 0
+  )
+  if (!donePhasesWithFiles.length) return
+
+  for (const phase of donePhasesWithFiles) {
+    const fileSpecs = PHASE_FILES[phase.phase_id]
+    for (const spec of fileSpecs) {
+      try {
+        const res = await fetch(`/api/runs/${runId}/files/${encodeURIComponent(spec.file)}`)
+        if (!res.ok) continue
+        const data = await res.json()
+        if (!data.content || !data.content.trim()) continue
+
+        const panelId = `po-${phase.phase_id}-${spec.file.replace(/\./g,'-')}`
+        const bodyId = `${panelId}-body`
+        const chevronId = `${panelId}-chevron`
+
+        const panel = document.createElement('div')
+        panel.className = 'phase-output'
+        panel.innerHTML = `
+          <div class="phase-output-header" onclick="togglePhaseOutput('${bodyId}','${chevronId}',this)">
+            <span class="po-name">${esc(phase.phase_id)}</span>
+            <span class="po-status">✓ done</span>
+            <span class="po-timing">${esc(spec.label)}</span>
+            <span class="po-badges">${badgesForPhase(phase.phase_id, data.content)}</span>
+            <span class="po-chevron" id="${chevronId}">▾</span>
+          </div>
+          <div class="phase-output-body" id="${bodyId}">
+            <div class="md-content">${renderMarkdown(data.content)}</div>
+          </div>`
+        container.appendChild(panel)
+      } catch (_) {}
+    }
+  }
+}
+
+function togglePhaseOutput(bodyId, chevronId, header) {
+  const body = document.getElementById(bodyId)
+  if (!body) return
+  const isOpen = body.classList.contains('open')
+  body.classList.toggle('open', !isOpen)
+  const chevron = document.getElementById(chevronId)
+  if (chevron) chevron.classList.toggle('open', !isOpen)
+}
+
+function badgesForPhase(phaseId, content) {
+  if (phaseId === 'qa') {
+    const passMatch = content.match(/(\d+)\/(\d+) passing/)
+    const bugMatch = content.match(/(\d+) bug/)
+    let badges = ''
+    if (passMatch) {
+      const cls = passMatch[1] === passMatch[2] ? 'pass' : 'fail'
+      badges += `<span class="po-badge ${cls}">${passMatch[1]}/${passMatch[2]} passing</span>`
+    }
+    if (bugMatch) {
+      const cls = bugMatch[1] === '0' ? 'pass' : 'warn'
+      badges += `<span class="po-badge ${cls}">${bugMatch[1]} bugs</span>`
+    }
+    return badges
+  }
+  if (phaseId === 'devops') {
+    if (/APPROVED/i.test(content)) return '<span class="po-badge pass">APPROVED</span>'
+    if (/CHANGES REQUESTED/i.test(content)) return '<span class="po-badge warn">CHANGES REQUESTED</span>'
+  }
+  return ''
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
