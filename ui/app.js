@@ -14,13 +14,91 @@ const REVIEW_AFTER_PHASE = {
   'task-review': 'architecture',
 }
 
+// ── Markdown renderer ────────────────────────────────────────────────────────
+function renderMarkdown(raw) {
+  if (!raw) return ''
+  let s = raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+
+  // Fenced code blocks
+  s = s.replace(/```[\w]*\n([\s\S]*?)```/g, (_,c) =>
+    `<pre><code>${c.trimEnd()}</code></pre>`)
+
+  // Inline code
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>')
+
+  // Headings
+  s = s.replace(/^### (.+)$/gm, '<h3>$1</h3>')
+  s = s.replace(/^## (.+)$/gm, '<h2>$1</h2>')
+  s = s.replace(/^# (.+)$/gm, '<h1>$1</h1>')
+
+  // HR
+  s = s.replace(/^---$/gm, '<hr>')
+
+  // Bold
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+
+  // Italic
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+
+  // Links
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>')
+
+  // Tables (simple: |col|col|)
+  s = s.replace(/((?:\|.+\|\n)+)/g, tbl => {
+    const rows = tbl.trim().split('\n')
+    let html = '<table>'
+    rows.forEach((row, i) => {
+      if (/^\|[-:| ]+\|$/.test(row)) return
+      const cells = row.split('|').slice(1,-1).map(c => c.trim())
+      const tag = i === 0 ? 'th' : 'td'
+      html += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>'
+    })
+    return html + '</table>'
+  })
+
+  // Unordered list
+  s = s.replace(/((?:^[ \t]*[-*] .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n')
+      .map(l => `<li>${l.replace(/^[ \t]*[-*] /,'')}</li>`).join('')
+    return `<ul>${items}</ul>`
+  })
+
+  // Ordered list
+  s = s.replace(/((?:^\d+\. .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n')
+      .map(l => `<li>${l.replace(/^\d+\. /,'')}</li>`).join('')
+    return `<ol>${items}</ol>`
+  })
+
+  // Paragraphs (double newline → <p>)
+  s = s.split(/\n\n+/).map(para => {
+    para = para.trim()
+    if (!para) return ''
+    if (/^<(h[1-3]|ul|ol|pre|table|hr)/.test(para)) return para
+    return `<p>${para.replace(/\n/g,' ')}</p>`
+  }).join('\n')
+
+  return s
+}
+
 function updateOnboardingVisibility() {
   const hasRuns = state.runs && state.runs.length > 0
   const ob = document.getElementById('onboarding-card')
-  const tw = document.getElementById('tree-wrap')
-  if (!ob || !tw) return
+  const rd = document.getElementById('run-detail')
+  if (!ob || !rd) return
   ob.style.display = hasRuns ? 'none' : 'flex'
-  tw.style.display = hasRuns ? 'block' : 'none'
+  rd.style.display = hasRuns ? 'block' : 'none'
+}
+
+function toggleSection(bodyId) {
+  const body = document.getElementById(bodyId)
+  if (!body) return
+  body.classList.toggle('open')
+  const sectionId = bodyId.replace('-body', '')
+  const chevron = document.getElementById(sectionId + '-chevron')
+  if (chevron) chevron.textContent = body.classList.contains('open') ? '▴' : '▾'
 }
 
 const NW = 150, NH = 44, GAP_X = 195, GAP_Y = 58, MX = 20, MY = 34
@@ -31,24 +109,12 @@ async function init() {
   await loadRuns()
   await loadStats()
   connectWS()
-  bindEvents()
   renderTreeSimple()
   updateOnboardingVisibility()
   // Poll active run every 6s — agent results land in SQLite async
   setInterval(async () => {
     if (state.activeRun) await refreshActiveRun()
   }, 6000)
-  // Token ticker — visually increment tokens only for actively running agents
-  setInterval(() => {
-    let changed = false
-    state.agents.forEach(ag => {
-      if (ag.status === 'running') {
-        ag.tokens = (ag.tokens || 0) + Math.floor(Math.random() * 80 + 40)
-        changed = true
-      }
-    })
-    if (changed) renderTreeSimple()
-  }, 1800)
 }
 
 async function refreshActiveRun() {
@@ -59,13 +125,7 @@ async function refreshActiveRun() {
     const prevCount = state.agents.length
     state.activeRun = detail
     state.phases = detail.phases || []
-    const freshAgents = (detail.results || []).map(mapResult)
-    // Preserve locally-inflated token counts for running agents not yet reported to DB
-    state.agents = freshAgents.map(fresh => {
-      if (fresh.tokens) return fresh
-      const prev = state.agents.find(a => a.agent === fresh.agent && a.phase === fresh.phase)
-      return (prev && prev.tokens) ? { ...fresh, tokens: prev.tokens } : fresh
-    })
+    state.agents = (detail.results || []).map(mapResult)
     state.reviews = (detail.reviews || []).map(r => ({
       gate: r.gate,
       status: r.status,
@@ -114,26 +174,14 @@ async function loadStats() {
 }
 
 function renderStats(s) {
-  const panel = document.getElementById('stats-panel')
+  const panel = document.getElementById('sidebar-stats')
   if (!panel) return
   if (!s || s.runs_total === 0) { panel.style.display = 'none'; return }
   panel.style.display = 'block'
-  document.getElementById('stat-tokens-total').textContent =
-    s.tokens_total > 0 ? fmtNum(s.tokens_total) + ' tokens used' : '—'
-  document.getElementById('stat-caveman').textContent =
-    s.caveman_compression_pct + '% caveman'
-  document.getElementById('stat-context').textContent =
-    s.context_isolation_multiplier.toFixed(1) + '× vs solo session'
-  document.getElementById('stat-speedup').textContent =
-    s.parallelism_speedup.toFixed(1) + '×'
-  document.getElementById('stat-agents-total').textContent =
-    fmtNum(s.agents_total) + ' dispatched'
-  document.getElementById('stat-agents-avg').textContent =
-    s.avg_agents_per_run.toFixed(1)
-  document.getElementById('stat-runs-total').textContent =
-    s.runs_total + ' completed'
-  document.getElementById('stat-tokens-avg').textContent =
-    fmtNum(Math.round(s.avg_tokens_per_run))
+  document.getElementById('stat-agents-line').textContent =
+    `${fmtNum(s.agents_total)} agents dispatched`
+  document.getElementById('stat-tokens-line').textContent =
+    `${fmtNum(s.tokens_total)} tokens · ${s.parallelism_speedup.toFixed(1)}× speedup`
 }
 
 function fmtNum(n) {
@@ -166,6 +214,7 @@ function mapResult(r) {
     tokens: r.tokens_used || 0,
     summary: r.summary || '',
     sources: (() => { try { return typeof r.sources === 'string' ? JSON.parse(r.sources) : (r.sources || []) } catch(_){ return [] } })(),
+    deliverables: (() => { try { return typeof r.deliverables === 'string' ? JSON.parse(r.deliverables) : (r.deliverables || []) } catch(_){ return [] } })(),
   }
 }
 
@@ -215,7 +264,6 @@ async function loadWorkflows() {
     const res = await fetch('/api/workflows')
     state.workflows = await res.json() || []
   } catch (_) { state.workflows = [] }
-  renderWorkflowSelect()
 }
 
 async function loadRuns() {
@@ -259,105 +307,26 @@ async function loadRunDetail(runId) {
   } catch (_) {}
 }
 
-// ── Dispatch ─────────────────────────────────────────────────────────────────
-async function dispatch() {
-  const text = document.getElementById('task-in').value.trim()
-  const jiraUrl = document.getElementById('jira-in').value.trim()
-  if (!text) { showCmd(null, 'Enter a task description first.', true); return }
-  const workflow = document.getElementById('wf-select').value || 'feature-build'
-  let runId
-  try {
-    const res = await fetch('/api/task', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, jiraUrl, workflow }),
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json()
-    runId = data.run_id
-  } catch (e) {
-    document.getElementById('offline-banner').style.display = 'block'
-    showCmd(null, `Server unreachable: ${e.message}`, true)
-    return
-  }
-  // Refresh run list to show new run immediately
-  try {
-    const rres = await fetch('/api/runs')
-    if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory(); updateOnboardingVisibility() }
-    if (runId) await loadRunDetail(runId)
-  } catch (_) {}
-  showCmd(`/team-dispatch --from-browser --workflow ${workflow}`)
-}
-
-function showCmd(cmd, errorMsg, isError) {
-  const banner = document.getElementById('cmd-banner')
-  const cmdText = document.getElementById('cmd-text')
-  const label = banner.querySelector('.cmd-label')
-  const copy = document.getElementById('cmd-copy')
-  if (isError) {
-    label.textContent = 'Error'
-    label.style.color = 'var(--red)'
-    banner.style.background = '#1a0808'
-    banner.style.borderBottomColor = 'var(--red)'
-    cmdText.textContent = errorMsg
-    copy.style.display = 'none'
-  } else {
-    label.textContent = 'Run in Claude Code'
-    label.style.color = 'var(--accent)'
-    banner.style.background = '#0e0b1e'
-    banner.style.borderBottomColor = 'var(--accent)'
-    cmdText.textContent = cmd
-    copy.style.display = ''
-    copy.textContent = 'Copy'
-    copy.className = 'cmd-copy'
-  }
-  banner.style.display = 'flex'
-}
-
-function dismissCmd() {
-  document.getElementById('cmd-banner').style.display = 'none'
-}
-
-function copyCmd() {
-  const txt = document.getElementById('cmd-text').textContent
-  navigator.clipboard.writeText(txt).then(() => {
-    const btn = document.getElementById('cmd-copy')
-    btn.textContent = 'Copied'
-    btn.className = 'cmd-copy copied'
-    setTimeout(() => { btn.textContent = 'Copy'; btn.className = 'cmd-copy' }, 2000)
-  })
-}
-
 // ── Renders ──────────────────────────────────────────────────────────────────
-function renderWorkflowSelect() {
-  const sel = document.getElementById('wf-select')
-  if (!state.workflows.length) {
-    sel.innerHTML = '<option value="feature-build">feature-build</option>'
-    return
-  }
-  sel.innerHTML = state.workflows.map(w =>
-    `<option value="${esc(w)}">${esc(w)}</option>`
-  ).join('')
-}
-
 function renderRunHistory() {
   const el = document.getElementById('run-history')
   if (!state.runs.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:10px">No runs yet</div>'
+    el.innerHTML = '<div style="color:var(--muted);font-size:10px;padding:8px 10px">No runs yet</div>'
     return
   }
-  el.innerHTML = state.runs.map((r) => {
+  el.innerHTML = state.runs.map(r => {
     const dot = r.status === 'running' ? 'var(--amber)' :
                 r.status === 'done'    ? 'var(--green)' :
-                r.status === 'blocked' ? 'var(--red)'   :
-                r.status === 'pending' ? 'var(--accent)' : 'var(--muted)'
+                r.status === 'blocked' ? 'var(--red)'   : 'var(--muted)'
     const isActive = state.activeRun && r.id === state.activeRun.id
+    const taskExcerpt = (r.task_text || '').slice(0, 40) + ((r.task_text || '').length > 40 ? '…' : '')
     return `
       <div class="run-item${isActive ? ' active' : ''}" data-id="${esc(r.id)}" onclick="loadRunDetail('${esc(r.id)}')">
-        <div class="ri-name">
-          <span class="status-badge" style="background:${dot}"></span>${esc(r.workflow_name || r.id)}
+        <div class="ri-header">
+          <span class="status-badge" style="background:${dot}"></span>
+          <span class="ri-name">${esc(r.workflow_name || r.id)}</span>
         </div>
-        <div class="ri-meta">${r.status === 'pending' ? 'waiting for Claude' : esc(r.status)} · ${fmtTime(r.started_at)}</div>
+        <div class="ri-meta">${esc(taskExcerpt || r.id)} · ${fmtTime(r.started_at)}</div>
       </div>`
   }).join('')
 }
@@ -523,57 +492,32 @@ function selectAgentData(ag) {
   const card = document.getElementById('active-card')
   card.style.display = 'block'
   document.getElementById('ac-name').textContent = `${ag.agent} · ${ag.phase}`
+
+  const pill = document.getElementById('ac-status-pill')
+  pill.textContent = ag.status
+  pill.className = `ac-status-pill ${ag.status}`
+
   document.getElementById('ac-summary').textContent = ag.summary || `${ag.status} — no output yet.`
   document.getElementById('ac-conf').textContent = ag.conf ? `confidence: ${ag.conf}` : ''
-  document.getElementById('ac-tokens').textContent = ag.tokens ? fmtK(ag.tokens) + ' tokens' : ''
+  document.getElementById('ac-tokens').textContent = (ag.tokens > 0) ? fmtK(ag.tokens) + ' tokens' : ''
+
   const sources = ag.sources || []
   document.getElementById('ac-sources').innerHTML = sources.map(s =>
-    `<a class="src-tag" href="${esc(s)}" target="_blank" rel="noopener noreferrer" title="${esc(s)}">${esc(String(s).replace(/^https?:\/\//, '').slice(0, 40))}</a>`
+    `<a class="src-tag" href="${esc(s)}" target="_blank" rel="noopener" title="${esc(s)}">${
+      esc(String(s).replace(/^https?:\/\//,'').slice(0,40))
+    }</a>`
   ).join('')
 
-  const outputEl = document.getElementById('ac-output')
-  const outputContent = document.getElementById('ac-output-content')
-  outputEl.style.display = 'none'
-  if (state.activeRun) {
-    fetch(`/api/runs/${state.activeRun.id}/files`)
-      .then(r => r.ok ? r.json() : [])
-      .then(files => {
-        const agentSlug = ag.agent.toLowerCase().replace(/[-_]/g, '')
-        const match = files.find(f => {
-          const stem = f.toLowerCase().replace(/\.[^.]+$/, '').replace(/^report-/, '').replace(/[-_]/g, '')
-          return stem === agentSlug
-        })
-        if (!match) return null
-        return fetch(`/api/runs/${state.activeRun.id}/files/${encodeURIComponent(match)}`)
-      })
-      .then(r => r && r.ok ? r.json() : null)
-      .then(data => {
-        if (!data) return
-        outputContent.textContent = data.content
-        outputEl.style.display = 'block'
-      })
-      .catch(() => {})
+  const delivEl = document.getElementById('ac-deliverables')
+  const delivList = document.getElementById('ac-deliverables-list')
+  if (ag.deliverables && ag.deliverables.length) {
+    delivEl.style.display = 'block'
+    delivList.innerHTML = ag.deliverables.map(d =>
+      `<div class="ac-deliverables-list">├── ${esc(d)}</div>`
+    ).join('')
+  } else {
+    delivEl.style.display = 'none'
   }
-}
-
-// ── Events ───────────────────────────────────────────────────────────────────
-function bindEvents() {
-  document.getElementById('dispatch-btn').addEventListener('click', dispatch)
-
-  const dz = document.getElementById('drop-zone')
-  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over') })
-  dz.addEventListener('dragleave', () => dz.classList.remove('over'))
-  dz.addEventListener('drop', async e => {
-    e.preventDefault()
-    dz.classList.remove('over')
-    const file = e.dataTransfer.files[0]
-    if (!file) return
-    const data = await file.arrayBuffer()
-    try {
-      await fetch(`/api/files/upload?name=${encodeURIComponent(file.name)}`, { method: 'POST', body: data })
-      dz.textContent = `✓ ${file.name} uploaded`
-    } catch (_) { dz.textContent = 'Upload failed' }
-  })
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
