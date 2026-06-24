@@ -9,68 +9,44 @@
 </head>
 <body>
 <div class="shell">
-<div class="offline-banner" id="offline-banner" style="display:none">
-  Server offline — start Anton with <code>anton</code> (or <code>go run main.go</code>) then refresh
-</div>
+
+  <div class="offline-banner" id="offline-banner" style="display:none">
+    Server offline — start Anton with <code>anton</code> then refresh
+  </div>
 
   <header class="hdr">
-    <div class="brand">
-      <span class="logo-icon">⚡</span>
-      <span class="logo">Anton</span>
-      <span class="logo-badge">BETA</span>
-    </div>
-    <span class="tagline">11 specialist agents · live in your browser</span>
-    <select class="wf-select" id="wf-select" aria-label="Workflow">
-      <option value="feature-build">feature-build</option>
-      <option value="code-review">code-review</option>
-      <option value="bug-fix">bug-fix</option>
-      <option value="incident-response">incident-response</option>
-      <option value="architecture-review">architecture-review</option>
-    </select>
+    <span class="logo-icon">⚡</span>
+    <span class="logo">Anton</span>
+    <span class="logo-badge">BETA</span>
+    <span class="hdr-sep"></span>
     <div class="ws-dot" id="ws-dot" title="WebSocket connection"></div>
-    <button class="btn" id="dispatch-btn">&#9654; Dispatch</button>
   </header>
 
   <div class="layout">
 
     <aside class="sidebar">
-      <div>
-        <label class="lbl" for="task-in">Task</label>
-        <textarea class="textarea" id="task-in" placeholder="Describe what to build, fix, or review…"></textarea>
-      </div>
-      <div>
-        <label class="lbl" for="jira-in">Jira / Linear URL</label>
-        <input class="tinput" id="jira-in" type="url" placeholder="https://…/PROJ-123">
-      </div>
-      <div class="dropzone" id="drop-zone">Drop .md or .pdf context here</div>
-      <div class="sec-lbl">Run History</div>
+      <div class="sidebar-label">Runs</div>
       <div class="run-list" id="run-history"></div>
+      <div class="sidebar-stats" id="sidebar-stats" style="display:none">
+        <div class="stat-line" id="stat-agents-line">—</div>
+        <div class="stat-line muted" id="stat-tokens-line">—</div>
+      </div>
     </aside>
 
-    <section class="main">
-      <div class="phase-bar" id="phase-bar"></div>
+    <section class="main" id="main-panel">
 
-      <div class="cmd-banner" id="cmd-banner" style="display:none">
-        <span class="cmd-label">Run in Claude Code</span>
-        <code class="cmd-text" id="cmd-text"></code>
-        <button class="cmd-copy" id="cmd-copy" onclick="copyCmd()" title="Copy">Copy</button>
-        <button class="cmd-dismiss" onclick="dismissCmd()" title="Dismiss">✕</button>
-      </div>
-
-      <div id="review-banner-container" style="display:none"></div>
-
+      <!-- Onboarding (shown when no runs) -->
       <div id="onboarding-card" class="onboarding-card">
         <div class="ob-inner">
           <div class="ob-icon">⚡</div>
           <h2 class="ob-title">Welcome to Anton</h2>
-          <p class="ob-sub">One slash command. 11 specialists. Live in your browser.</p>
+          <p class="ob-sub">Dispatch a task from Claude Code — watch 11 specialists work live.</p>
           <div class="ob-steps">
             <div class="ob-step">
               <span class="ob-num">1</span>
               <div class="ob-step-body">
                 <div class="ob-step-title">Start Anton in your project</div>
                 <code class="ob-code">anton</code>
-                <div class="ob-step-hint">Runs on <span class="ob-hl">http://localhost:3000</span> — you're already here ✓</div>
               </div>
             </div>
             <div class="ob-step">
@@ -83,66 +59,65 @@
             <div class="ob-step">
               <span class="ob-num">3</span>
               <div class="ob-step-body">
-                <div class="ob-step-title">Dispatch a task — watch 11 agents fire</div>
+                <div class="ob-step-title">Dispatch a task — Anton asks clarifying questions</div>
                 <code class="ob-code">/team-dispatch build user auth with JWT</code>
-                <div class="ob-step-hint">Or type a task in the sidebar and click <strong>▶ Dispatch</strong></div>
               </div>
             </div>
           </div>
           <div class="ob-footer">
             <a class="ob-link" href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener">GitHub ↗</a>
-            <span class="ob-dot-sep">·</span>
-            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team#workflows" target="_blank" rel="noopener">Workflows ↗</a>
-            <span class="ob-dot-sep">·</span>
-            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team#the-agent-roles" target="_blank" rel="noopener">Agent Roles ↗</a>
           </div>
         </div>
       </div>
 
-      <div class="tree-wrap" id="tree-wrap" style="display:none">
-        <svg id="tree-svg" width="100%" aria-label="Agent execution tree"></svg>
-      </div>
-      <div class="active-card" id="active-card" style="display:none">
-        <div class="ac-agent" id="ac-name"></div>
-        <div class="ac-summary" id="ac-summary"></div>
-        <div class="ac-meta">
-          <span id="ac-conf"></span>
-          <span id="ac-tokens"></span>
+      <!-- Run detail (shown when run selected) -->
+      <div id="run-detail" style="display:none">
+
+        <!-- Orchestration card (approach.md) -->
+        <div class="panel-section" id="orchestration-section" style="display:none">
+          <div class="panel-header" onclick="toggleSection('orchestration-body')">
+            <span class="panel-title">Orchestration</span>
+            <span class="panel-meta" id="orchestration-meta"></span>
+            <span class="panel-chevron" id="orchestration-chevron">▾</span>
+          </div>
+          <div class="panel-body" id="orchestration-body"></div>
         </div>
-        <div class="ac-sources" id="ac-sources"></div>
-        <div class="ac-output" id="ac-output" style="display:none">
-          <div class="ac-output-label">Output file</div>
-          <pre class="ac-output-content" id="ac-output-content"></pre>
+
+        <!-- Phase timeline strip -->
+        <div class="phase-bar" id="phase-bar"></div>
+
+        <!-- Human review gate panel -->
+        <div id="review-banner-container"></div>
+
+        <!-- Agent tree -->
+        <div class="tree-wrap" id="tree-wrap">
+          <svg id="tree-svg" width="100%" aria-label="Agent execution tree"></svg>
         </div>
+
+        <!-- Active agent detail card -->
+        <div class="agent-card" id="active-card" style="display:none">
+          <div class="ac-header">
+            <span class="ac-agent" id="ac-name"></span>
+            <span class="ac-status-pill" id="ac-status-pill"></span>
+          </div>
+          <div class="ac-summary" id="ac-summary"></div>
+          <div class="ac-meta">
+            <span id="ac-conf"></span>
+            <span id="ac-tokens"></span>
+          </div>
+          <div class="ac-sources" id="ac-sources"></div>
+          <div class="ac-deliverables" id="ac-deliverables" style="display:none">
+            <div class="ac-deliverables-label">Deliverables</div>
+            <div id="ac-deliverables-list"></div>
+          </div>
+        </div>
+
+        <!-- Phase output panels -->
+        <div id="phase-outputs"></div>
+
       </div>
 
-      <div class="stats-panel" id="stats-panel" style="display:none">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Token Savings</div>
-            <div class="stat-primary" id="stat-tokens-total">—</div>
-            <div class="stat-secondary"><span class="stat-badge" id="stat-caveman">—% caveman</span></div>
-            <div class="stat-secondary"><span class="stat-badge" id="stat-context">—× vs solo session</span></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Parallelism</div>
-            <div class="stat-primary" id="stat-speedup">—</div>
-            <div class="stat-secondary">peak speedup on parallel phases</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Agents</div>
-            <div class="stat-primary" id="stat-agents-total">—</div>
-            <div class="stat-secondary"><span id="stat-agents-avg">—</span> avg per run</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Runs</div>
-            <div class="stat-primary" id="stat-runs-total">—</div>
-            <div class="stat-secondary"><span id="stat-tokens-avg">—</span> tokens avg</div>
-          </div>
-        </div>
-      </div>
     </section>
-
   </div>
 </div>
 <script src="app.js"></script>
