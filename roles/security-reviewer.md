@@ -22,6 +22,14 @@ Optional (user-enabled): github, sentry
 5. Write `.claude-team/runs/<run_id>/security-report.md`
 6. Call coordinator MCP `report` tool before exiting
 
+## Optional SAST Layer
+
+After manual OWASP audit:
+
+5. Check if semgrep is available: `which semgrep 2>/dev/null`
+   - If available: run `semgrep --config auto <implementation_dir>` and include findings in security-report.md
+   - If absent: note "SAST: skipped — semgrep not installed" in report. Do NOT report BLOCKED.
+
 ## Critical Finding Rule
 
 If ANY finding is severity CRITICAL:
