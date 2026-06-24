@@ -5,37 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anton — Multi-agent engineering team</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="shell">
 
-  <div class="offline-banner" id="offline-banner" style="display:none">
-    Server offline — start Anton with <code>anton</code> then refresh
+  <!-- Offline banner -->
+  <div id="offline-banner" class="offline-banner" style="display:none">
+    Server offline — start Anton with <code>go run main.go</code> then refresh
   </div>
 
+  <!-- Header: 52px -->
   <header class="hdr">
-    <span class="logo-icon">⚡</span>
+    <span class="logo-mark">⚡</span>
     <span class="logo">Anton</span>
     <span class="logo-badge">BETA</span>
     <span class="hdr-sep"></span>
+    <!-- Current run label (JS populates) -->
+    <span class="hdr-run-title" id="hdr-run-title" style="display:none"></span>
+    <span class="hdr-sep"></span>
+    <!-- WS status -->
     <div class="ws-dot" id="ws-dot" title="WebSocket connection"></div>
   </header>
 
+  <!-- 3-zone layout -->
   <div class="layout">
 
+    <!-- Zone 1: Sidebar (220px) -->
     <aside class="sidebar">
       <div class="sidebar-label">Runs</div>
       <div class="run-list" id="run-history"></div>
-      <div class="sidebar-stats" id="sidebar-stats" style="display:none">
+      <div class="sidebar-footer" id="sidebar-stats" style="display:none">
         <div class="stat-line" id="stat-agents-line">—</div>
         <div class="stat-line muted" id="stat-tokens-line">—</div>
       </div>
     </aside>
 
-    <section class="main" id="main-panel">
+    <!-- Zone 2: Canvas (flex center) -->
+    <main class="canvas" id="canvas">
 
-      <!-- Onboarding (shown when no runs) -->
+      <!-- Onboarding (no runs) -->
       <div id="onboarding-card" class="onboarding-card">
         <div class="ob-inner">
           <div class="ob-icon">⚡</div>
@@ -46,7 +58,7 @@
               <span class="ob-num">1</span>
               <div class="ob-step-body">
                 <div class="ob-step-title">Start Anton in your project</div>
-                <code class="ob-code">anton</code>
+                <code class="ob-code">go run main.go</code>
               </div>
             </div>
             <div class="ob-step">
@@ -59,7 +71,7 @@
             <div class="ob-step">
               <span class="ob-num">3</span>
               <div class="ob-step-body">
-                <div class="ob-step-title">Dispatch a task — Anton asks clarifying questions</div>
+                <div class="ob-step-title">Dispatch a task</div>
                 <code class="ob-code">/team-dispatch build user auth with JWT</code>
               </div>
             </div>
@@ -70,56 +82,111 @@
         </div>
       </div>
 
-      <!-- Run detail (shown when run selected) -->
+      <!-- Run detail (JS shows this when a run is selected) -->
       <div id="run-detail" style="display:none">
 
         <!-- Orchestration card (approach.md) -->
-        <div class="panel-section" id="orchestration-section" style="display:none">
-          <div class="panel-header" onclick="toggleSection('orchestration-body')">
-            <span class="panel-title">Orchestration</span>
-            <span class="panel-meta" id="orchestration-meta"></span>
-            <span class="panel-chevron" id="orchestration-chevron">▾</span>
+        <div class="canvas-card" id="orchestration-section" style="display:none">
+          <div class="card-header panel-header" onclick="toggleSection('orchestration-body')">
+            <span class="card-header-icon">◈</span>
+            <span class="card-header-title panel-title">Orchestration</span>
+            <span class="card-header-meta panel-meta" id="orchestration-meta"></span>
+            <span class="card-chevron panel-chevron" id="orchestration-chevron">▾</span>
           </div>
-          <div class="panel-body" id="orchestration-body"></div>
+          <div class="card-body panel-body" id="orchestration-body"></div>
         </div>
+
+        <!-- Human review banner -->
+        <div id="review-banner-container"></div>
 
         <!-- Phase timeline strip -->
         <div class="phase-bar" id="phase-bar"></div>
 
-        <!-- Human review gate panel -->
-        <div id="review-banner-container"></div>
-
-        <!-- Agent tree -->
-        <div class="tree-wrap" id="tree-wrap">
-          <svg id="tree-svg" width="100%" aria-label="Agent execution tree"></svg>
+        <!-- DAG canvas (agent flow diagram) -->
+        <div class="dag-wrap" id="dag-wrap">
+          <svg id="tree-svg" class="dag-svg" width="100%" aria-label="Agent execution flow"></svg>
         </div>
 
-        <!-- Active agent detail card -->
-        <div class="agent-card" id="active-card" style="display:none">
-          <div class="ac-header">
-            <span class="ac-agent" id="ac-name"></span>
-            <span class="ac-status-pill" id="ac-status-pill"></span>
-          </div>
-          <div class="ac-summary" id="ac-summary"></div>
-          <div class="ac-meta">
-            <span id="ac-conf"></span>
-            <span id="ac-tokens"></span>
-          </div>
-          <div class="ac-sources" id="ac-sources"></div>
-          <div class="ac-deliverables" id="ac-deliverables" style="display:none">
-            <div class="ac-deliverables-label">Deliverables</div>
-            <div id="ac-deliverables-list"></div>
-          </div>
-        </div>
-
-        <!-- Phase output panels -->
+        <!-- Phase outputs (doc panels) -->
         <div id="phase-outputs"></div>
 
       </div>
 
-    </section>
+    </main>
+
+    <!-- Zone 3: Inspector (380px right panel) -->
+    <aside class="inspector" id="inspector">
+
+      <!-- Inspector tab bar -->
+      <div class="inspector-tabs">
+        <button class="itab active" id="itab-btn-agent" onclick="switchInspectorTab('agent')">Agent</button>
+        <button class="itab" id="itab-btn-docs" onclick="switchInspectorTab('docs')">Docs</button>
+      </div>
+
+      <!-- Agent tab -->
+      <div class="itab-panel" id="itab-agent">
+        <!-- Empty state -->
+        <div class="inspector-empty" id="agent-empty">
+          <div class="ie-icon">◉</div>
+          <div class="ie-hint">Click an agent in the diagram</div>
+        </div>
+        <!-- Agent detail (JS populates, hidden until agent clicked) -->
+        <div class="agent-detail" id="active-card" style="display:none">
+          <div class="ad-header">
+            <div class="ad-name" id="ac-name"></div>
+            <span class="ac-status-pill" id="ac-status-pill"></span>
+          </div>
+          <div class="ad-meta-row">
+            <span class="ad-meta-item" id="ac-conf"></span>
+            <span class="ad-meta-item mono" id="ac-tokens"></span>
+          </div>
+          <div class="ad-summary md-content" id="ac-summary"></div>
+          <div class="ad-section" id="ac-deliverables" style="display:none">
+            <div class="ad-section-label">Deliverables</div>
+            <div class="ad-deliverables-list" id="ac-deliverables-list"></div>
+          </div>
+          <div class="ad-sources" id="ac-sources"></div>
+        </div>
+      </div>
+
+      <!-- Docs tab -->
+      <div class="itab-panel" id="itab-docs" style="display:none">
+        <div class="inspector-empty" id="docs-empty">
+          <div class="ie-icon">⊡</div>
+          <div class="ie-hint">Phase outputs appear here when phases complete</div>
+        </div>
+        <!-- Phase doc sub-tabs (JS populates) -->
+        <div class="doc-phase-tabs" id="doc-phase-tabs" style="display:none"></div>
+        <!-- Doc content area (JS populates) -->
+        <div class="doc-viewer" id="doc-viewer"></div>
+      </div>
+
+    </aside>
+
   </div>
+
 </div>
+<script>
+// Inspector tab switching (referenced from HTML onclick attributes)
+function switchInspectorTab(tab) {
+  const agentPanel = document.getElementById('itab-agent');
+  const docsPanel  = document.getElementById('itab-docs');
+  const agentBtn   = document.getElementById('itab-btn-agent');
+  const docsBtn    = document.getElementById('itab-btn-docs');
+  if (!agentPanel || !docsPanel) return;
+  if (tab === 'agent') {
+    agentPanel.style.display = 'flex';
+    docsPanel.style.display  = 'none';
+    agentBtn.classList.add('active');
+    docsBtn.classList.remove('active');
+  } else {
+    docsPanel.style.display  = 'flex';
+    agentPanel.style.display = 'none';
+    docsBtn.classList.add('active');
+    agentBtn.classList.remove('active');
+  }
+}
+</script>
 <script src="app.js"></script>
 </body>
 </html>

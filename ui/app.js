@@ -87,9 +87,11 @@ function updateOnboardingVisibility() {
   const hasRuns = state.runs && state.runs.length > 0
   const ob = document.getElementById('onboarding-card')
   const rd = document.getElementById('run-detail')
+  const inspector = document.getElementById('inspector')
   if (!ob || !rd) return
   ob.style.display = hasRuns ? 'none' : 'flex'
   rd.style.display = hasRuns ? 'block' : 'none'
+  if (inspector) inspector.style.display = (hasRuns && state.activeRun) ? 'flex' : 'none'
 }
 
 function toggleSection(bodyId) {
@@ -109,6 +111,16 @@ function toggleSection(bodyId) {
 
 const NW = 150, NH = 44, GAP_X = 195, GAP_Y = 58, MX = 20, MY = 34
 
+// ── Inspector tab switching ──────────────────────────────────────────────────
+function switchInspectorTab(tab) {
+  document.querySelectorAll('.itab').forEach(b => b.classList.remove('active'))
+  document.querySelectorAll('.itab-panel').forEach(p => p.style.display = 'none')
+  const btn = document.getElementById(`itab-btn-${tab}`)
+  const panel = document.getElementById(`itab-${tab}`)
+  if (btn) btn.classList.add('active')
+  if (panel) panel.style.display = 'flex'
+}
+
 // ── Boot ────────────────────────────────────────────────────────────────────
 async function init() {
   await loadWorkflows()
@@ -117,6 +129,7 @@ async function init() {
   connectWS()
   renderTreeSimple()
   updateOnboardingVisibility()
+  switchInspectorTab('agent')
   // Poll active run every 6s — agent results land in SQLite async
   setInterval(async () => {
     if (state.activeRun) await refreshActiveRun()
@@ -313,6 +326,9 @@ async function loadRunDetail(runId) {
     if (state.agents.length > 0) selectAgentData(state.agents[state.agents.length - 1])
     else document.getElementById('active-card').style.display = 'none'
 
+    // Show inspector
+    document.getElementById('inspector').style.display = 'flex'
+
     // New: load orchestration card and phase outputs
     await renderOrchestrationCard(runId)
     await renderPhaseOutputs(runId)
@@ -376,6 +392,7 @@ function phaseOrder(p) {
 
 function renderTreeSimple() {
   const svg = document.getElementById('tree-svg')
+  if (!svg) return
 
   if (!state.agents.length) {
     const w = svg.parentElement ? svg.parentElement.clientWidth || 700 : 700
@@ -408,6 +425,12 @@ function renderTreeSimple() {
     return
   }
 
+  const PH_W = 160, PH_H = 44, PH_GAP = 200  // phase node dimensions + center-to-center spacing
+  const AG_W = 128, AG_H = 28, AG_GAP = 36    // agent chip dimensions + vertical gap
+  const START_X = 24, PHASE_Y = 24             // starting positions
+  const AGENT_START_Y = 84                     // agents start below phase node
+
+  // Group agents by phase, in phase order
   const phaseMap = {}
   state.agents.forEach(a => {
     if (!phaseMap[a.phase]) phaseMap[a.phase] = []
@@ -415,80 +438,135 @@ function renderTreeSimple() {
   })
   const phases = Object.keys(phaseMap).sort((a, b) => phaseOrder(a) - phaseOrder(b))
 
-  const phasePositions = {}
-  phases.forEach((ph, pi) => {
-    const x = MX + pi * GAP_X
-    phasePositions[ph] = phaseMap[ph].map((ag, ai) => ({
-      x, y: MY + ai * GAP_Y, cx: x + NW/2, cy: MY + ai * GAP_Y + NH/2, ag
-    }))
-  })
+  // Phase status = worst-case agent status (or from state.phases)
+  function phaseStatus(ph) {
+    const statePhase = state.phases.find(p => p.phase_id === ph)
+    if (statePhase) return statePhase.status || 'pending'
+    const agents = phaseMap[ph] || []
+    if (agents.some(a => a.status === 'blocked')) return 'blocked'
+    if (agents.some(a => a.status === 'running')) return 'running'
+    if (agents.every(a => a.status === 'done' || a.status === 'done_with_concerns')) return 'done'
+    return 'pending'
+  }
 
-  const maxRows = Math.max(...phases.map(ph => phaseMap[ph].length))
-  const totalH = MY + maxRows * GAP_Y + 30
-  const totalW = MX + phases.length * GAP_X + NW + MX
+  // Compute positions
+  const phaseX = {}  // phase -> center-x of phase node
+  phases.forEach((ph, i) => { phaseX[ph] = START_X + PH_W/2 + i * PH_GAP })
+
+  // Compute height — handle >4 agents in 2-row layout
+  function agentRows(ph) {
+    const count = phaseMap[ph].length
+    return count > 4 ? 2 : 1
+  }
+  function agentsPerRow(ph) {
+    const count = phaseMap[ph].length
+    return count > 4 ? 2 : count
+  }
+
+  const maxRowsNeeded = Math.max(...phases.map(ph => {
+    const count = phaseMap[ph].length
+    return count > 4 ? Math.ceil(count / 2) : count
+  }))
+
+  const totalH = AGENT_START_Y + maxRowsNeeded * AG_GAP + 20
+  const totalW = START_X + phases.length * PH_GAP + PH_W/2 + START_X
+
   svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`)
   svg.setAttribute('height', Math.max(totalH, 200))
 
   let html = '<defs>'
+  // Signal orb paths (between phase node centers)
   phases.forEach((ph, pi) => {
     if (pi === 0) return
-    const prevPh = phases[pi - 1]
-    const prevNodes = phasePositions[prevPh]
-    const currNodes = phasePositions[ph]
-    const src = prevNodes[Math.floor(prevNodes.length / 2)]
-    const dst = currNodes[Math.floor(currNodes.length / 2)]
-    const x1 = src.x + NW, y1 = src.cy, x2 = dst.x, y2 = dst.cy
-    const mx = (x1 + x2) / 2
-    html += `<path id="sigpath-${pi}" style="display:none" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`
+    const prevPh = phases[pi-1]
+    const x1 = phaseX[prevPh] + PH_W/2, y1 = PHASE_Y + PH_H/2
+    const x2 = phaseX[ph] - PH_W/2,    y2 = PHASE_Y + PH_H/2
+    const mx = (x1+x2)/2
+    html += `<path id="sigpath-${pi}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" style="display:none"/>`
   })
   html += '</defs>'
 
-  // Edges
+  // Edges between phases
   phases.forEach((ph, pi) => {
     if (pi === 0) return
-    const prevPh = phases[pi - 1]
-    phasePositions[prevPh].forEach(src => {
-      phasePositions[ph].forEach(dst => {
-        const x1 = src.x + NW, y1 = src.cy, x2 = dst.x, y2 = dst.cy
-        const mx = (x1 + x2) / 2
-        html += `<path class="tree-edge" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`
-      })
-    })
+    const prevPh = phases[pi-1]
+    const x1 = phaseX[prevPh] + PH_W/2, y1 = PHASE_Y + PH_H/2
+    const x2 = phaseX[ph] - PH_W/2,    y2 = PHASE_Y + PH_H/2
+    const mx = (x1+x2)/2
+    const dstStatus = phaseStatus(ph)
+    const edgeCls = dstStatus === 'done' ? 'done' : dstStatus === 'running' ? 'running' : 'pending'
+    html += `<path class="dag-edge tree-edge ${edgeCls}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`
   })
 
-  // Signal orbs
+  // Signal orbs (animate on running edges)
   phases.forEach((ph, pi) => {
     if (pi === 0) return
-    const dur = (1.6 + pi * 0.25).toFixed(2)
-    const delay = ((pi - 1) * 0.55).toFixed(2)
-    html += `<circle class="signal-orb" r="3.5">
+    const prevPh = phases[pi-1]
+    const isRunning = phaseStatus(ph) === 'running' || phaseStatus(prevPh) === 'running'
+    if (!isRunning) return
+    const dur = (1.6 + pi * 0.3).toFixed(2)
+    const delay = ((pi-1) * 0.5).toFixed(2)
+    html += `<circle class="dag-signal-orb signal-orb" r="3.5">
       <animateMotion dur="${dur}s" repeatCount="indefinite" begin="${delay}s">
         <mpath href="#sigpath-${pi}"/>
       </animateMotion>
     </circle>`
   })
 
-  // Phase labels
+  // Phase nodes
   phases.forEach((ph, pi) => {
-    const x = MX + pi * GAP_X + NW / 2
-    html += `<text class="phase-label" x="${x}" y="${MY - 12}" text-anchor="middle">${esc(ph)}</text>`
-  })
-
-  // Nodes
-  state.agents.forEach(ag => {
-    const nodes = phasePositions[ag.phase]
-    const ni = phaseMap[ag.phase].indexOf(ag)
-    if (!nodes || ni < 0) return
-    const { x, y } = nodes[ni]
-    const st = ag.status
-    const dot = st === 'done' ? '✓' : st === 'running' ? '▸' : st === 'blocked' ? '✗' : '○'
-    const sub = ag.conf || (ag.tokens > 0 ? fmtK(ag.tokens) + ' tok' : st)
+    const cx = phaseX[ph]
+    const x = cx - PH_W/2, y = PHASE_Y
+    const st = phaseStatus(ph)
+    const dot = st === 'done' ? '✓' : st === 'running' ? '▸' : st === 'blocked' ? '✗' : ''
     html += `
-      <rect class="node-rect ${esc(st)}" x="${x}" y="${y}" width="${NW}" height="${NH}" rx="5"
-        onclick="selectAgentByName('${esc(ag.agent)}')" style="cursor:pointer" tabindex="0"
-        role="button" aria-label="${esc(ag.agent)}: ${esc(st)}"/>
-      <text class="node-name" x="${x + NW/2}" y="${y + 17}" text-anchor="middle" style="pointer-events:none">${esc(ag.agent)}</text>
-      <text class="node-status-txt ${esc(st)}" x="${x + NW/2}" y="${y + 33}" text-anchor="middle" style="pointer-events:none">${esc(dot)} ${esc(sub)}</text>`
+      <rect class="dag-phase-node node-rect ${st}" x="${x}" y="${y}" width="${PH_W}" height="${PH_H}" rx="8"/>
+      <text class="dag-phase-label phase-label" x="${cx}" y="${y + 27}" text-anchor="middle">
+        ${dot ? esc(dot)+' ' : ''}${esc(ph)}
+      </text>`
+
+    // Agent chips below phase node
+    const agents = phaseMap[ph]
+    const agentCount = agents.length
+    const useRows = agentCount > 4
+
+    if (useRows) {
+      // 2-column layout for >4 agents
+      agents.forEach((ag, ai) => {
+        const col = ai % 2
+        const row = Math.floor(ai / 2)
+        const totalRowW = 2 * AG_W + 8
+        const agStartX = cx - totalRowW / 2
+        const ax = agStartX + col * (AG_W + 8)
+        const ay = AGENT_START_Y + row * AG_GAP
+        const ast = ag.status
+        const adot = ast === 'done' ? '✓' : ast === 'running' ? '▸' : ast === 'blocked' ? '✗' : ast === 'done_with_concerns' ? '⚠' : '○'
+        const asub = ag.tokens > 0 ? fmtK(ag.tokens)+' tok' : adot
+        html += `
+          <rect class="dag-agent-chip node-rect ${ast}" x="${ax}" y="${ay}" width="${AG_W}" height="${AG_H}" rx="5"
+            onclick="selectAgentByName('${esc(ag.agent)}')" style="cursor:pointer"
+            role="button" tabindex="0" aria-label="${esc(ag.agent)}: ${esc(ast)}"/>
+          <text class="dag-agent-label node-name" x="${ax+AG_W/2}" y="${ay+12}" text-anchor="middle" style="pointer-events:none">${esc(ag.agent)}</text>
+          <text class="dag-agent-status node-status-txt ${ast}" x="${ax+AG_W/2}" y="${ay+24}" text-anchor="middle" style="pointer-events:none">${esc(asub)}</text>`
+      })
+    } else {
+      // Single row — center agent chips below phase node
+      const totalAgW = agentCount * AG_W + (agentCount - 1) * 8
+      const agStartX = cx - totalAgW / 2
+      agents.forEach((ag, ai) => {
+        const ax = agStartX + ai * (AG_W + 8)
+        const ay = AGENT_START_Y
+        const ast = ag.status
+        const adot = ast === 'done' ? '✓' : ast === 'running' ? '▸' : ast === 'blocked' ? '✗' : ast === 'done_with_concerns' ? '⚠' : '○'
+        const asub = ag.tokens > 0 ? fmtK(ag.tokens)+' tok' : adot
+        html += `
+          <rect class="dag-agent-chip node-rect ${ast}" x="${ax}" y="${ay}" width="${AG_W}" height="${AG_H}" rx="5"
+            onclick="selectAgentByName('${esc(ag.agent)}')" style="cursor:pointer"
+            role="button" tabindex="0" aria-label="${esc(ag.agent)}: ${esc(ast)}"/>
+          <text class="dag-agent-label node-name" x="${ax+AG_W/2}" y="${ay+12}" text-anchor="middle" style="pointer-events:none">${esc(ag.agent)}</text>
+          <text class="dag-agent-status node-status-txt ${ast}" x="${ax+AG_W/2}" y="${ay+24}" text-anchor="middle" style="pointer-events:none">${esc(asub)}</text>`
+      })
+    }
   })
 
   svg.innerHTML = html
@@ -501,12 +579,15 @@ function selectAgentByName(name) {
 
 function selectAgentData(ag) {
   if (!ag) return
+  // Show/hide inspector empty state
+  document.getElementById('agent-empty').style.display = 'none'
   const card = document.getElementById('active-card')
-  card.style.display = 'block'
+  card.style.display = 'flex'
+
   document.getElementById('ac-name').textContent = `${ag.agent} · ${ag.phase}`
 
   const pill = document.getElementById('ac-status-pill')
-  pill.textContent = ag.status
+  pill.textContent = ag.status.replace(/_/g,' ')
   pill.className = `ac-status-pill ${ag.status}`
 
   document.getElementById('ac-summary').innerHTML = renderMarkdown(ag.summary || `${ag.status} — no output yet.`)
@@ -523,13 +604,16 @@ function selectAgentData(ag) {
   const delivEl = document.getElementById('ac-deliverables')
   const delivList = document.getElementById('ac-deliverables-list')
   if (ag.deliverables && ag.deliverables.length) {
-    delivEl.style.display = 'block'
+    delivEl.style.display = 'flex'
     delivList.innerHTML = ag.deliverables.map(d =>
-      `<div class="ac-deliverables-list">├── ${esc(d)}</div>`
+      `<div>├── ${esc(d)}</div>`
     ).join('')
   } else {
     delivEl.style.display = 'none'
   }
+
+  // Switch to agent tab
+  switchInspectorTab('agent')
 }
 
 // ── Orchestration card ───────────────────────────────────────────────────────
@@ -622,7 +706,10 @@ async function renderPhaseOutputs(runId) {
   const donePhasesWithFiles = state.phases.filter(p =>
     p.status === 'done' && PHASE_FILES[p.phase_id] && PHASE_FILES[p.phase_id].length > 0
   )
-  if (!donePhasesWithFiles.length) return
+  if (!donePhasesWithFiles.length) {
+    await renderDocInspector(runId)
+    return
+  }
 
   for (const phase of donePhasesWithFiles) {
     const fileSpecs = PHASE_FILES[phase.phase_id]
@@ -654,6 +741,9 @@ async function renderPhaseOutputs(runId) {
       } catch (_) {}
     }
   }
+
+  // Also populate inspector docs tab
+  await renderDocInspector(runId)
 }
 
 function togglePhaseOutput(bodyId, chevronId) {
@@ -685,6 +775,148 @@ function badgesForPhase(phaseId, content) {
     if (/CHANGES REQUESTED/i.test(content)) return '<span class="po-badge warn">CHANGES REQUESTED</span>'
   }
   return ''
+}
+
+// ── Inspector Docs tab ────────────────────────────────────────────────────────
+async function renderDocInspector(runId) {
+  const tabsEl = document.getElementById('doc-phase-tabs')
+  const viewerEl = document.getElementById('doc-viewer')
+  const emptyEl = document.getElementById('docs-empty')
+  if (!tabsEl || !viewerEl) return
+
+  // Collect available phase files
+  const available = []
+  const donePhasesWithFiles = state.phases.filter(p =>
+    p.status === 'done' && PHASE_FILES[p.phase_id] && PHASE_FILES[p.phase_id].length > 0
+  )
+
+  for (const phase of donePhasesWithFiles) {
+    for (const spec of PHASE_FILES[phase.phase_id]) {
+      try {
+        const res = await fetch(`/api/runs/${runId}/files/${encodeURIComponent(spec.file)}`)
+        if (!res.ok) continue
+        const data = await res.json()
+        if (!data.content || !data.content.trim()) continue
+        available.push({ phase: phase.phase_id, file: spec.file, label: spec.label, content: data.content })
+      } catch (_) {}
+    }
+  }
+
+  if (!available.length) {
+    emptyEl.style.display = 'flex'
+    tabsEl.style.display = 'none'
+    viewerEl.innerHTML = ''
+    return
+  }
+
+  emptyEl.style.display = 'none'
+  tabsEl.style.display = 'flex'
+
+  // Build sub-tabs
+  tabsEl.innerHTML = available.map((item, i) =>
+    `<button class="doc-ptab${i===0?' active':''}" onclick="selectDocTab(${i})" data-tab="${i}">${esc(item.label)}</button>`
+  ).join('')
+
+  // Store tabs data for click handler
+  window._docTabs = available
+
+  // Show first tab
+  showDocTab(0)
+}
+
+function selectDocTab(i) {
+  document.querySelectorAll('.doc-ptab').forEach((b,j) => b.classList.toggle('active', i===j))
+  showDocTab(i)
+}
+
+function showDocTab(i) {
+  const item = (window._docTabs || [])[i]
+  const viewerEl = document.getElementById('doc-viewer')
+  if (!item || !viewerEl) return
+
+  // QA Report gets structured viewer
+  if (item.phase === 'qa' && item.file === 'qa-report.md') {
+    viewerEl.innerHTML = renderQAStructured(item.content)
+    return
+  }
+  // Everything else: markdown
+  viewerEl.innerHTML = `<div class="md-content">${renderMarkdown(item.content)}</div>`
+}
+
+// ── QA structured viewer ──────────────────────────────────────────────────────
+function renderQAStructured(content) {
+  let html = ''
+
+  // 1. Parse layer table (look for markdown table with Layer|Method|Result columns)
+  const tableMatch = content.match(/\|[\s]*Layer[\s]*\|[\s\S]*?(?=\n\n|\n#|$)/i)
+  if (tableMatch) {
+    const rows = tableMatch[0].trim().split('\n').filter(r => !/^\|[-:| ]+\|$/.test(r))
+    if (rows.length > 1) {
+      html += '<table class="doc-qa-table"><thead><tr>'
+      const headers = rows[0].split('|').slice(1,-1).map(h => h.trim())
+      headers.forEach(h => { html += `<th>${esc(h)}</th>` })
+      html += '</tr></thead><tbody>'
+      rows.slice(1).forEach(row => {
+        const cells = row.split('|').slice(1,-1).map(c => c.trim())
+        const firstCell = cells[0] || ''
+        const isPassing = /✓|pass|✅/i.test(row)
+        const isFail = /✗|fail|blocked|❌/i.test(row)
+        const isSkip = /skip|n\/a|—/i.test(firstCell.toLowerCase())
+        const rowClass = isPassing ? 'pass-row' : isFail ? 'fail-row' : ''
+        html += `<tr class="${rowClass}">`
+        cells.forEach(c => { html += `<td>${esc(c)}</td>` })
+        html += '</tr>'
+      })
+      html += '</tbody></table>'
+    }
+  }
+
+  // 2. Parse API test blocks — look for lines like:
+  //    ✓ POST /auth/register → 201
+  //    ✗ GET /users → expected 200, got 500
+  const apiLines = content.match(/^[✓✗○]\s+(GET|POST|PUT|PATCH|DELETE)\s+\S+.*$/gm) || []
+  if (apiLines.length) {
+    html += '<div style="margin-bottom:14px"><div class="ad-section-label" style="margin-bottom:10px">API Tests</div>'
+    apiLines.forEach((line, i) => {
+      const pass = line.startsWith('✓')
+      const m = line.match(/[✓✗○]\s+(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s*(→|expected|→)?\s*(\d+)?(.*)/)
+      if (!m) return
+      const method = m[1], path = m[2], statusCode = m[4] || ''
+      const blockId = `atb-${i}`
+      const statusCls = pass ? 's2xx' : 's4xx'
+      html += `
+        <div class="api-test-block">
+          <div class="atb-header" onclick="toggleApiBlock('${blockId}')">
+            <span class="atb-method ${method}">${esc(method)}</span>
+            <span class="atb-path">${esc(path)}</span>
+            ${statusCode ? `<span class="atb-status ${statusCls}">${esc(statusCode)}</span>` : ''}
+            <span class="${pass ? 'pass-tag' : 'fail-tag'}" style="margin-left:8px;font-size:11px">${pass ? '✓ pass' : '✗ fail'}</span>
+          </div>
+          <div class="atb-body" id="${blockId}">
+            <div class="atb-label">Raw</div>
+            <div class="atb-req">${esc(line)}</div>
+          </div>
+        </div>`
+    })
+    html += '</div>'
+  }
+
+  // 3. Screenshots section
+  html += `<div id="qa-screenshots"></div>`
+
+  // 4. Fallback: if no structured content found, render as markdown
+  if (!tableMatch && !apiLines.length) {
+    html = `<div class="md-content">${renderMarkdown(content)}</div>`
+  }
+
+  return html
+}
+
+function toggleApiBlock(blockId) {
+  const body = document.getElementById(blockId)
+  if (!body) return
+  const isOpen = body.classList.contains('open')
+  body.classList.toggle('open', !isOpen)
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────
