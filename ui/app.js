@@ -18,7 +18,7 @@ const REVIEW_AFTER_PHASE = {
 function renderMarkdown(raw) {
   if (!raw) return ''
   let s = raw
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 
   // Fenced code blocks
   s = s.replace(/```[\w]*\n([\s\S]*?)```/g, (_,c) =>
@@ -640,7 +640,7 @@ async function renderPhaseOutputs(runId) {
         const panel = document.createElement('div')
         panel.className = 'phase-output'
         panel.innerHTML = `
-          <div class="phase-output-header" onclick="togglePhaseOutput('${bodyId}','${chevronId}',this)">
+          <div class="phase-output-header" onclick="togglePhaseOutput('${bodyId}','${chevronId}')">
             <span class="po-name">${esc(phase.phase_id)}</span>
             <span class="po-status">✓ done</span>
             <span class="po-timing">${esc(spec.label)}</span>
@@ -656,7 +656,7 @@ async function renderPhaseOutputs(runId) {
   }
 }
 
-function togglePhaseOutput(bodyId, chevronId, header) {
+function togglePhaseOutput(bodyId, chevronId) {
   const body = document.getElementById(bodyId)
   if (!body) return
   const isOpen = body.classList.contains('open')
