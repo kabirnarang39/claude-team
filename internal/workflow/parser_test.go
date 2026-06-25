@@ -66,6 +66,84 @@ func TestParseFeatureBuildWorkflow(t *testing.T) {
 	}
 }
 
+func TestParseFileNotFound(t *testing.T) {
+	_, err := workflow.ParseFile("/no/such/file.yaml")
+	if err == nil {
+		t.Error("expected error for missing file")
+	}
+}
+
+func TestParseNoName(t *testing.T) {
+	_, err := workflow.Parse([]byte(`agents: {}\nsteps: []`))
+	if err == nil {
+		t.Error("expected error for workflow with no name")
+	}
+}
+
+func TestAgentsByPhase_Phases(t *testing.T) {
+	data := []byte(`
+name: feature-build
+phases:
+  - id: planning
+    sequential:
+      - requirements-analyst
+      - tech-writer
+  - id: engineering
+    parallel:
+      - backend-engineer
+      - frontend-engineer
+`)
+	w, err := workflow.Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pairs := workflow.AgentsByPhase(w)
+	if len(pairs) != 2 {
+		t.Fatalf("want 2 pairs, got %d", len(pairs))
+	}
+	if pairs[0].PhaseID != "planning" {
+		t.Errorf("want planning, got %s", pairs[0].PhaseID)
+	}
+	if len(pairs[0].Agents) != 2 {
+		t.Errorf("want 2 agents in planning, got %d", len(pairs[0].Agents))
+	}
+	if pairs[1].PhaseID != "engineering" {
+		t.Errorf("want engineering, got %s", pairs[1].PhaseID)
+	}
+	if len(pairs[1].Agents) != 2 {
+		t.Errorf("want 2 agents in engineering, got %d", len(pairs[1].Agents))
+	}
+}
+
+func TestAgentsByPhase_Steps(t *testing.T) {
+	data := []byte(`
+name: simple
+agents:
+  manager:
+    role: manager
+  engineer:
+    role: engineer
+steps:
+  - run: manager
+  - parallel:
+      - run: engineer
+`)
+	w, err := workflow.Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pairs := workflow.AgentsByPhase(w)
+	if len(pairs) != 2 {
+		t.Fatalf("want 2 pairs, got %d", len(pairs))
+	}
+	if pairs[0].Agents[0] != "manager" {
+		t.Errorf("want manager, got %s", pairs[0].Agents[0])
+	}
+	if pairs[1].Agents[0] != "engineer" {
+		t.Errorf("want engineer, got %s", pairs[1].Agents[0])
+	}
+}
+
 func TestToGraph(t *testing.T) {
 	w := &workflow.Workflow{
 		Name: "test",

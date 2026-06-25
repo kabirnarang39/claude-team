@@ -221,6 +221,235 @@ func TestHumanReview(t *testing.T) {
 	}
 }
 
+func TestGetAllStatuses(t *testing.T) {
+	s := openTestStore(t)
+	runID, err := s.CreateRun("feature-build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpdateAgentStatus(runID, "engineer", "running"); err != nil {
+		t.Fatal(err)
+	}
+	// GetAllStatuses returns statuses for most recent run
+	statuses, err := s.GetAllStatuses()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if statuses["engineer"] != "running" {
+		t.Errorf("got %q, want running", statuses["engineer"])
+	}
+}
+
+func TestGetRuns(t *testing.T) {
+	s := openTestStore(t)
+	id1, err := s.CreateRun("feature-build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id2, err := s.CreateRun("security-audit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runs, err := s.GetRuns(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs) != 2 {
+		t.Fatalf("want 2 runs, got %d", len(runs))
+	}
+	ids := map[string]bool{runs[0].ID: true, runs[1].ID: true}
+	if !ids[id1] || !ids[id2] {
+		t.Errorf("want both run IDs present, got %v", ids)
+	}
+}
+
+func TestCreateRunWithID(t *testing.T) {
+	s := openTestStore(t)
+	if err := s.CreateRunWithID("my-run-id", "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+	runs, err := s.GetRuns(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs) != 1 || runs[0].ID != "my-run-id" {
+		t.Errorf("want run my-run-id, got %+v", runs)
+	}
+	// INSERT OR IGNORE — second call should not error
+	if err := s.CreateRunWithID("my-run-id", "feature-build"); err != nil {
+		t.Errorf("duplicate CreateRunWithID should not error: %v", err)
+	}
+}
+
+func TestSendAndReadMessages(t *testing.T) {
+	s := openTestStore(t)
+	if err := s.SendMessage("engineer", "qa", "ready for review"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SendMessage("engineer", "qa", "second message"); err != nil {
+		t.Fatal(err)
+	}
+	msgs, err := s.ReadPendingMessages("qa")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs) != 2 {
+		t.Fatalf("want 2 messages, got %d", len(msgs))
+	}
+	// After reading, messages should be marked read
+	msgs2, err := s.ReadPendingMessages("qa")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs2) != 0 {
+		t.Errorf("want 0 pending messages after read, got %d", len(msgs2))
+	}
+}
+
+func TestPrePopulateAgents(t *testing.T) {
+	s := openTestStore(t)
+	if err := s.CreateRunWithID("run-1", "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+	pairs := []store.PhaseAgentPair{
+		{PhaseID: "planning", Agents: []string{"requirements-analyst", "tech-writer"}},
+		{PhaseID: "engineering", Agents: []string{"backend-engineer"}},
+	}
+	s.PrePopulateAgents("run-1", pairs)
+
+	detail, err := s.GetRunDetail("run-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(detail.Phases) != 2 {
+		t.Errorf("want 2 phases, got %d", len(detail.Phases))
+	}
+	if len(detail.Results) != 3 {
+		t.Errorf("want 3 placeholder results, got %d", len(detail.Results))
+	}
+	for _, r := range detail.Results {
+		if r.Status != "PENDING" {
+			t.Errorf("placeholder status should be PENDING, got %q", r.Status)
+		}
+	}
+}
+
+func TestGetDeliverableIndex(t *testing.T) {
+	s := openTestStore(t)
+	runID, err := s.CreateRun("feature-build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpsertPhase(runID, "engineering", "done"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.InsertAgentResult(store.AgentResult{
+		RunID:        runID,
+		PhaseID:      "engineering",
+		Agent:        "backend-engineer",
+		Status:       "DONE",
+		Confidence:   "high",
+		Summary:      "API implemented",
+		Deliverables: []string{"internal/api/handlers.go", "internal/store/runs.go"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	index, err := s.GetDeliverableIndex(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(index) != 2 {
+		t.Fatalf("want 2 entries in index, got %d", len(index))
+	}
+	entry, ok := index["handlers.go"]
+	if !ok {
+		t.Fatal("handlers.go not in index")
+	}
+	if entry[0] != "backend-engineer" {
+		t.Errorf("want backend-engineer, got %s", entry[0])
+	}
+	if entry[1] != "engineering" {
+		t.Errorf("want engineering, got %s", entry[1])
+	}
+}
+
+func TestUpsertAgentResultStatusBranches(t *testing.T) {
+	s := openTestStore(t)
+	if err := s.CreateRunWithID("run-upsert", "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		status      string
+		wantPhase   string
+	}{
+		{"DONE", "done"},
+		{"DONE_WITH_CONCERNS", "done"},
+		{"BLOCKED", "failed"},
+		{"FAILED", "failed"},
+		{"RUNNING", "running"},
+	}
+	for _, tc := range cases {
+		err := s.UpsertAgentResult(store.AgentResult{
+			RunID:   "run-upsert",
+			PhaseID: "phase-" + tc.status,
+			Agent:   "agent-" + tc.status,
+			Status:  tc.status,
+		})
+		if err != nil {
+			t.Errorf("UpsertAgentResult(%s): %v", tc.status, err)
+		}
+	}
+
+	detail, err := s.GetRunDetail("run-upsert")
+	if err != nil {
+		t.Fatal(err)
+	}
+	phaseStatuses := map[string]string{}
+	for _, p := range detail.Phases {
+		phaseStatuses[p.PhaseID] = p.Status
+	}
+	if phaseStatuses["phase-DONE"] != "done" {
+		t.Errorf("DONE: got phase status %q, want done", phaseStatuses["phase-DONE"])
+	}
+	if phaseStatuses["phase-DONE_WITH_CONCERNS"] != "done" {
+		t.Errorf("DONE_WITH_CONCERNS: got %q, want done", phaseStatuses["phase-DONE_WITH_CONCERNS"])
+	}
+	if phaseStatuses["phase-BLOCKED"] != "failed" {
+		t.Errorf("BLOCKED: got %q, want failed", phaseStatuses["phase-BLOCKED"])
+	}
+	if phaseStatuses["phase-FAILED"] != "failed" {
+		t.Errorf("FAILED: got %q, want failed", phaseStatuses["phase-FAILED"])
+	}
+}
+
+func TestUpsertAgentResultEmptyPhaseID(t *testing.T) {
+	s := openTestStore(t)
+	if err := s.CreateRunWithID("run-empty-phase", "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+	// Empty PhaseID should default to "unknown"
+	err := s.UpsertAgentResult(store.AgentResult{
+		RunID:  "run-empty-phase",
+		Agent:  "engineer",
+		Status: "DONE",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	detail, err := s.GetRunDetail("run-empty-phase")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(detail.Results) == 0 {
+		t.Fatal("expected result")
+	}
+	if detail.Results[0].PhaseID != "unknown" {
+		t.Errorf("got PhaseID %q, want unknown", detail.Results[0].PhaseID)
+	}
+}
+
 func TestWatcher(t *testing.T) {
 	s := openTestStore(t)
 	out := make(chan store.Event, 10)

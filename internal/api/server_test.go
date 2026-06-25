@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -689,5 +690,757 @@ func TestResolveReviewInvalidStatus(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestWorkflowUploadEndpoint(t *testing.T) {
+	var uploaded []byte
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:  hub,
+		UIFS: fstest.MapFS{},
+		OnWorkflowUpload: func(data []byte, name string) error {
+			uploaded = data
+			return nil
+		},
+	})
+
+	body := `name: my-workflow
+agents: {}
+steps: []`
+	req := httptest.NewRequest("POST", "/api/workflow/upload?name=my-workflow.yaml", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("got %d, want 201", rec.Code)
+	}
+	if string(uploaded) != body {
+		t.Errorf("uploaded content mismatch")
+	}
+}
+
+func TestWorkflowUploadNotConfigured(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/workflow/upload", strings.NewReader("data"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowActiveEndpoint(t *testing.T) {
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:  hub,
+		UIFS: fstest.MapFS{},
+		GetActiveWorkflow: func() ([]byte, error) {
+			return []byte(`{"name":"feature-build"}`), nil
+		},
+	})
+
+	req := httptest.NewRequest("GET", "/api/workflow/active", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "feature-build") {
+		t.Errorf("body missing workflow name: %s", rec.Body.String())
+	}
+}
+
+func TestWorkflowSetActiveEndpoint(t *testing.T) {
+	var activated string
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:  hub,
+		UIFS: fstest.MapFS{},
+		SetActiveWorkflow: func(name string) error {
+			activated = name
+			return nil
+		},
+	})
+
+	body := `{"name":"security-audit"}`
+	req := httptest.NewRequest("PUT", "/api/workflow/active", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+	if activated != "security-audit" {
+		t.Errorf("want security-audit activated, got %q", activated)
+	}
+}
+
+func TestWorkflowListEndpoint(t *testing.T) {
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:  hub,
+		UIFS: fstest.MapFS{},
+		GetWorkflowList: func() ([]string, error) {
+			return []string{"feature-build", "security-audit"}, nil
+		},
+	})
+
+	req := httptest.NewRequest("GET", "/api/workflows", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+	var names []string
+	if err := json.NewDecoder(rec.Body).Decode(&names); err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 2 {
+		t.Errorf("want 2 workflows, got %d", len(names))
+	}
+}
+
+func TestWorkflowListNilCallback(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/workflows", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+	var names []string
+	if err := json.NewDecoder(rec.Body).Decode(&names); err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
+		t.Errorf("want empty list, got %v", names)
+	}
+}
+
+func TestFileUploadEndpoint(t *testing.T) {
+	dir := t.TempDir()
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:        hub,
+		UIFS:       fstest.MapFS{},
+		RuntimeDir: dir,
+	})
+
+	req := httptest.NewRequest("POST", "/api/files/upload?name=spec.md", strings.NewReader("# spec content"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	var result map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if result["path"] == "" {
+		t.Error("expected path in response")
+	}
+	// Verify file on disk
+	data, err := os.ReadFile(filepath.Join(dir, "uploads", "spec.md"))
+	if err != nil {
+		t.Fatalf("uploaded file not found: %v", err)
+	}
+	if string(data) != "# spec content" {
+		t.Errorf("file content mismatch: %q", string(data))
+	}
+}
+
+func TestFileUploadMissingName(t *testing.T) {
+	dir := t.TempDir()
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, RuntimeDir: dir})
+	req := httptest.NewRequest("POST", "/api/files/upload", strings.NewReader("data"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestRunFileRawEndpoint(t *testing.T) {
+	dir := t.TempDir()
+	runDir := filepath.Join(dir, "runs", "run-raw-test")
+	if err := os.MkdirAll(runDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(runDir, "plan.md"), []byte("# Plan"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, RuntimeDir: dir})
+	handler := srv.Handler()
+
+	t.Run("returns file content with correct content type", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/run-raw-test/files/plan.md/raw", nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("got %d, want 200", rec.Code)
+		}
+		if rec.Body.String() != "# Plan" {
+			t.Errorf("got %q, want '# Plan'", rec.Body.String())
+		}
+		if !strings.Contains(rec.Header().Get("Content-Type"), "text/plain") {
+			t.Errorf("want text/plain content type, got %q", rec.Header().Get("Content-Type"))
+		}
+	})
+
+	t.Run("missing file returns 404", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/run-raw-test/files/missing.md/raw", nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("got %d, want 404", rec.Code)
+		}
+	})
+
+	t.Run("path traversal blocked", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/runs/run-raw-test/files/..%2Fetc%2Fpasswd/raw", nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("got %d, want 400", rec.Code)
+		}
+	})
+}
+
+func TestNoCacheHeader(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("hi")}}})
+	req := httptest.NewRequest("GET", "/index.html", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Errorf("want Cache-Control: no-store, got %q", rec.Header().Get("Cache-Control"))
+	}
+}
+
+func TestHandleSettingsBadJSON(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/settings", strings.NewReader("{bad json"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestHandleSettingsNilCallback(t *testing.T) {
+	// nil SaveSettings should still return 200
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/settings", strings.NewReader(`{"port":"3000"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+}
+
+func TestHandleRunFilesNotConfigured(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/runs/some-run/files", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestHandleRunFilesEmptyDir(t *testing.T) {
+	// Non-existent run dir returns empty array, not error
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, RuntimeDir: t.TempDir()})
+	req := httptest.NewRequest("GET", "/api/runs/no-such-run/files", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+	var result []any
+	if err := json.NewDecoder(rec.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if len(result) != 0 {
+		t.Errorf("want empty array, got %v", result)
+	}
+}
+
+func TestHandleRunFileNotConfigured(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/runs/some-run/files/plan.md", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestHandleRunFileMissing(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, RuntimeDir: t.TempDir()})
+	req := httptest.NewRequest("GET", "/api/runs/no-such-run/files/plan.md", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("got %d, want 404", rec.Code)
+	}
+}
+
+func TestHandleRunsWithData(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	if err := db.CreateRunWithID("run-a", "feature-build"); err != nil {
+		t.Fatal(err)
+	}
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, Store: db})
+	req := httptest.NewRequest("GET", "/api/runs", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("got %d, want 200", rec.Code)
+	}
+	var runs []map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&runs); err != nil {
+		t.Fatal(err)
+	}
+	if len(runs) != 1 {
+		t.Errorf("want 1 run, got %d", len(runs))
+	}
+}
+
+func TestHandleStatusWithStore(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	id, err := db.CreateRun("feature-build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateAgentStatus(id, "engineer", "running"); err != nil {
+		t.Fatal(err)
+	}
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, Store: db})
+	req := httptest.NewRequest("GET", "/api/status", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("got %d, want 200", rec.Code)
+	}
+	var result map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if result["engineer"] != "running" {
+		t.Errorf("got %q, want running", result["engineer"])
+	}
+}
+
+func TestWorkflowRawNotConfigured(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/workflow/raw", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowRawNotFound(t *testing.T) {
+	srv := api.NewServer(api.Config{
+		UIFS: fstest.MapFS{},
+		GetWorkflowRaw: func(name string) ([]byte, error) {
+			return nil, fmt.Errorf("workflow not found: %s", name)
+		},
+	})
+	req := httptest.NewRequest("GET", "/api/workflow/raw?name=missing", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("got %d, want 404", rec.Code)
+	}
+}
+
+func TestWorkflowSaveBadJSON(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, SaveWorkflow: func(n, y string) error { return nil }})
+	req := httptest.NewRequest("POST", "/api/workflow/save", strings.NewReader("{bad"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestWorkflowSaveEmptyName(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, SaveWorkflow: func(n, y string) error { return nil }})
+	req := httptest.NewRequest("POST", "/api/workflow/save", strings.NewReader(`{"name":"","yaml":"x"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestWorkflowSaveNilCallback(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/workflow/save", strings.NewReader(`{"name":"x.yaml","yaml":"y"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowSetActiveNilCallback(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("PUT", "/api/workflow/active", strings.NewReader(`{"name":"x"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowSetActiveBadJSON(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, SetActiveWorkflow: func(n string) error { return nil }})
+	req := httptest.NewRequest("PUT", "/api/workflow/active", strings.NewReader("{bad"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestWorkflowActiveNilCallback(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/workflow/active", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestMCPRegistryNilCallback(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/mcp-registry", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+	var names []string
+	if err := json.NewDecoder(rec.Body).Decode(&names); err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
+		t.Errorf("want empty, got %v", names)
+	}
+}
+
+func TestGetSettingsNilCallback(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/settings", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("got %d, want 200", rec.Code)
+	}
+}
+
+func TestSignalReviewBadJSON(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	srv := api.NewServer(api.Config{Hub: api.NewHub(), UIFS: fstest.MapFS{}, Store: db})
+	req := httptest.NewRequest("POST", "/api/runs/run-x/signal-review", strings.NewReader("{bad"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestSignalReviewNilStore(t *testing.T) {
+	srv := api.NewServer(api.Config{Hub: api.NewHub(), UIFS: fstest.MapFS{}})
+	body := `{"gate":"plan-review","summary":"x"}`
+	req := httptest.NewRequest("POST", "/api/runs/run-x/signal-review", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestResolveReviewBadJSON(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	srv := api.NewServer(api.Config{Hub: api.NewHub(), UIFS: fstest.MapFS{}, Store: db})
+	req := httptest.NewRequest("POST", "/api/runs/run-x/resolve-review", strings.NewReader("{bad"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("got %d, want 400", rec.Code)
+	}
+}
+
+func TestRunDetailNilStore(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("GET", "/api/runs/some-run", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestRunDetailNotFound(t *testing.T) {
+	db := openTestStoreForAPI(t)
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}, Store: db})
+	req := httptest.NewRequest("GET", "/api/runs/no-such-run", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("got %d, want 404", rec.Code)
+	}
+}
+
+func TestIngestResultNilStore(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/ingest-result", strings.NewReader(`{"agent":"x","run_id":"r","status":"DONE"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestHandleTaskNilStore(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/task", strings.NewReader(`{"text":"x"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestHandleTaskWithJiraURL(t *testing.T) {
+	dir := t.TempDir()
+	db := openTestStoreForAPI(t)
+	srv := api.NewServer(api.Config{
+		UIFS:       fstest.MapFS{},
+		Store:      db,
+		RuntimeDir: dir,
+	})
+	body := `{"text":"build auth","jiraUrl":"https://jira.example.com/PROJ-123","workflow":"feature-build"}`
+	req := httptest.NewRequest("POST", "/api/task", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("got %d, want 202: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestResolveReviewNilStore(t *testing.T) {
+	srv := api.NewServer(api.Config{Hub: api.NewHub(), UIFS: fstest.MapFS{}})
+	body := `{"gate":"plan-review","status":"approved","feedback":""}`
+	req := httptest.NewRequest("POST", "/api/runs/run-x/resolve-review", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowUploadCallbackError(t *testing.T) {
+	srv := api.NewServer(api.Config{
+		UIFS: fstest.MapFS{},
+		OnWorkflowUpload: func(data []byte, name string) error {
+			return fmt.Errorf("disk full")
+		},
+	})
+	req := httptest.NewRequest("POST", "/api/workflow/upload?name=x.yaml", strings.NewReader("data"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowActiveCallbackError(t *testing.T) {
+	srv := api.NewServer(api.Config{
+		UIFS: fstest.MapFS{},
+		GetActiveWorkflow: func() ([]byte, error) {
+			return nil, fmt.Errorf("no active workflow")
+		},
+	})
+	req := httptest.NewRequest("GET", "/api/workflow/active", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestWorkflowListCallbackError(t *testing.T) {
+	srv := api.NewServer(api.Config{
+		UIFS: fstest.MapFS{},
+		GetWorkflowList: func() ([]string, error) {
+			return nil, fmt.Errorf("read error")
+		},
+	})
+	req := httptest.NewRequest("GET", "/api/workflows", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestHandleSettingsSaveError(t *testing.T) {
+	srv := api.NewServer(api.Config{
+		UIFS: fstest.MapFS{},
+		SaveSettings: func(s map[string]string) error {
+			return fmt.Errorf("write error")
+		},
+	})
+	req := httptest.NewRequest("POST", "/api/settings", strings.NewReader(`{"port":"9999"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestFileUploadNotConfigured(t *testing.T) {
+	srv := api.NewServer(api.Config{UIFS: fstest.MapFS{}})
+	req := httptest.NewRequest("POST", "/api/files/upload?name=x.md", strings.NewReader("data"))
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("got %d, want 500", rec.Code)
+	}
+}
+
+func TestAgentsByPhaseStepsPath(t *testing.T) {
+	// Exercise agentsByPhase steps branch via handleTask with a steps-based workflow.
+	dir := t.TempDir()
+	wfDir := filepath.Join(dir, "workflows")
+	if err := os.MkdirAll(wfDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	// steps-based workflow (no phases:)
+	wfYAML := `name: steps-workflow
+agents:
+  manager:
+    role: manager
+  engineer:
+    role: engineer
+steps:
+  - run: manager
+  - parallel:
+      - run: engineer
+`
+	if err := os.WriteFile(filepath.Join(wfDir, "steps-workflow.yaml"), []byte(wfYAML), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	db := openTestStoreForAPI(t)
+	srv := api.NewServer(api.Config{
+		UIFS:         fstest.MapFS{},
+		Store:        db,
+		RuntimeDir:   dir,
+		WorkflowDirs: []string{wfDir},
+	})
+
+	body := `{"text":"build something","workflow":"steps-workflow"}`
+	req := httptest.NewRequest("POST", "/api/task", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("got %d, want 202: %s", rec.Code, rec.Body.String())
+	}
+	var result map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	detail, err := db.GetRunDetail(result["run_id"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	// steps-based workflow should pre-populate 2 agents (manager + engineer)
+	if len(detail.Results) != 2 {
+		t.Errorf("want 2 pre-populated agents, got %d", len(detail.Results))
+	}
+}
+
+func TestTaskEndpointWithWorkflowDir(t *testing.T) {
+	// Tests agentsByPhase code path via handleTask when WorkflowDirs is set.
+	dir := t.TempDir()
+	wfDir := filepath.Join(dir, "workflows")
+	if err := os.MkdirAll(wfDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	wfYAML := `name: feature-build
+phases:
+  - id: planning
+    sequential:
+      - requirements-analyst
+      - tech-writer
+  - id: engineering
+    parallel:
+      - backend-engineer
+      - frontend-engineer
+`
+	if err := os.WriteFile(filepath.Join(wfDir, "feature-build.yaml"), []byte(wfYAML), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := store.Open(filepath.Join(dir, "state.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	srv := api.NewServer(api.Config{
+		UIFS:         fstest.MapFS{},
+		Store:        db,
+		RuntimeDir:   dir,
+		WorkflowDirs: []string{wfDir},
+	})
+
+	body := `{"text":"build user auth","workflow":"feature-build"}`
+	req := httptest.NewRequest("POST", "/api/task", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("got %d, want 202: %s", rec.Code, rec.Body.String())
+	}
+	var result map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if result["run_id"] == "" {
+		t.Error("expected non-empty run_id")
+	}
+	// Verify PrePopulateAgents was called — run detail should have placeholder agents
+	detail, err := db.GetRunDetail(result["run_id"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(detail.Results) == 0 {
+		t.Error("expected placeholder agent results from PrePopulateAgents")
 	}
 }
