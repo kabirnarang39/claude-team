@@ -102,7 +102,7 @@ func (s *Store) ReadPendingMessages(agent string) ([]string, error) {
 		return nil, err
 	}
 	for _, id := range ids {
-		s.db.Exec(`UPDATE messages SET read_at = ? WHERE id = ?`, time.Now().Unix(), id)
+		_, _ = s.db.Exec(`UPDATE messages SET read_at = ? WHERE id = ?`, time.Now().Unix(), id)
 	}
 	return msgs, nil
 }
@@ -150,7 +150,7 @@ func (s *Store) GetAgentResultsSince(lastID int64) ([]AgentResult, int64, error)
 	}
 	defer rows.Close()
 	var results []AgentResult
-	var maxID int64 = lastID
+	maxID := lastID
 	for rows.Next() {
 		var r AgentResult
 		var deliverables, sources, concerns, questions string
@@ -160,10 +160,10 @@ func (s *Store) GetAgentResultsSince(lastID int64) ([]AgentResult, int64, error)
 		if err != nil {
 			return nil, maxID, err
 		}
-		json.Unmarshal([]byte(deliverables), &r.Deliverables)
-		json.Unmarshal([]byte(sources), &r.Sources)
-		json.Unmarshal([]byte(concerns), &r.Concerns)
-		json.Unmarshal([]byte(questions), &r.Questions)
+		_ = json.Unmarshal([]byte(deliverables), &r.Deliverables)
+		_ = json.Unmarshal([]byte(sources), &r.Sources)
+		_ = json.Unmarshal([]byte(concerns), &r.Concerns)
+		_ = json.Unmarshal([]byte(questions), &r.Questions)
 		if r.ID > maxID {
 			maxID = r.ID
 		}
@@ -212,7 +212,9 @@ func (s *Store) GetRunDetail(runID string) (*RunDetail, error) {
 	defer phaseRows.Close()
 	for phaseRows.Next() {
 		var p Phase
-		phaseRows.Scan(&p.RunID, &p.PhaseID, &p.Status, &p.StartedAt, &p.CompletedAt)
+		if err := phaseRows.Scan(&p.RunID, &p.PhaseID, &p.Status, &p.StartedAt, &p.CompletedAt); err != nil {
+			continue
+		}
 		r.Phases = append(r.Phases, p)
 	}
 
@@ -242,10 +244,10 @@ func (s *Store) GetRunDetail(runID string) (*RunDetail, error) {
 			&res.TestsRun, &res.TokensUsed, &res.CreatedAt); err != nil {
 			continue
 		}
-		json.Unmarshal([]byte(deliverables), &res.Deliverables)
-		json.Unmarshal([]byte(sources), &res.Sources)
-		json.Unmarshal([]byte(concerns), &res.Concerns)
-		json.Unmarshal([]byte(questions), &res.Questions)
+		_ = json.Unmarshal([]byte(deliverables), &res.Deliverables)
+		_ = json.Unmarshal([]byte(sources), &res.Sources)
+		_ = json.Unmarshal([]byte(concerns), &res.Concerns)
+		_ = json.Unmarshal([]byte(questions), &res.Questions)
 		r.Results = append(r.Results, res)
 	}
 
@@ -285,10 +287,10 @@ func (s *Store) CreateRunWithID(id, workflowName string) error {
 func (s *Store) PrePopulateAgents(runID string, pairs []PhaseAgentPair) {
 	now := time.Now().Unix()
 	for _, pa := range pairs {
-		s.db.Exec(`INSERT OR IGNORE INTO phases (run_id, phase_id, status, started_at) VALUES (?,?,'pending',?)`,
+		_, _ = s.db.Exec(`INSERT OR IGNORE INTO phases (run_id, phase_id, status, started_at) VALUES (?,?,'pending',?)`,
 			runID, pa.PhaseID, now)
 		for _, agent := range pa.Agents {
-			s.db.Exec(`INSERT OR IGNORE INTO agent_results
+			_, _ = s.db.Exec(`INSERT OR IGNORE INTO agent_results
 				(run_id, phase_id, agent, status, confidence, summary,
 				 deliverables_json, sources_json, concerns_json, questions_json,
 				 tests_run, tokens_used, created_at)

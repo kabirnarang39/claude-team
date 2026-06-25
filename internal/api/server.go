@@ -9,8 +9,8 @@ import (
 
 // Config holds all dependencies the server needs.
 type Config struct {
-	Hub        *Hub
-	UIFS       fs.FS
+	Hub          *Hub
+	UIFS         fs.FS
 	Store        *store.Store
 	RuntimeDir   string
 	WorkflowDirs []string

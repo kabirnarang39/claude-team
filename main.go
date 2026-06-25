@@ -59,7 +59,9 @@ func ensureProjectMCP(projectPath, dbPath string) {
 
 	claudeDir := filepath.Join(projectPath, ".claude")
 	settingsFile := filepath.Join(claudeDir, "settings.json")
-	os.MkdirAll(claudeDir, 0755)
+	if err := os.MkdirAll(claudeDir, 0755); err != nil {
+		return
+	}
 
 	// Read existing settings (if any)
 	var settings map[string]interface{}
@@ -116,7 +118,7 @@ func ensureProjectMCP(projectPath, dbPath string) {
 }
 
 // runCheck prints a setup health report and exits.
-func runCheck(projectPath, dbPath string) {
+func runCheck(projectPath string, _ string) {
 	ok := true
 	check := func(label, detail string, pass bool) {
 		if pass {
@@ -282,7 +284,7 @@ func main() {
 		filepath.Join(runtimeDir, "uploads"),
 		workflowsDir,
 	} {
-		os.MkdirAll(d, 0755)
+		_ = os.MkdirAll(d, 0755)
 	}
 
 	// Auto-register MCP in project .claude/settings.json so Claude Code picks it up.
@@ -292,7 +294,7 @@ func main() {
 	if err != nil {
 		log.Fatal("open db:", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if *demoFlag {
 		if err := seedDemoRun(db); err != nil {

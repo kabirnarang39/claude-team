@@ -17,7 +17,7 @@ import (
 func TestStatusEndpointNoStore(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		// Store is nil — should return empty object
 	})
@@ -42,7 +42,7 @@ func TestStatusEndpointNoStore(t *testing.T) {
 func TestWorkflowRawEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		GetWorkflowRaw: func(name string) ([]byte, error) {
 			return []byte(`{"name":"test","agents":{},"steps":[]}`), nil
@@ -69,7 +69,7 @@ func TestWorkflowSaveEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	saved := ""
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		SaveWorkflow: func(name, yaml string) error {
 			saved = name + ":" + yaml
@@ -94,7 +94,7 @@ func TestWorkflowSaveEndpoint(t *testing.T) {
 func TestMCPRegistryEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		GetMCPList: func() []string {
 			return []string{"github", "slack"}
@@ -120,7 +120,7 @@ func TestMCPRegistryEndpoint(t *testing.T) {
 func TestGetSettingsEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		GetSettings: func() map[string]string {
 			return map[string]string{
@@ -211,7 +211,7 @@ func TestSaveSettingsEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	var saved map[string]string
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		SaveSettings: func(settings map[string]string) error {
 			saved = settings
@@ -249,7 +249,7 @@ func TestIngestResultEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIFS: fstest.MapFS{},
+		UIFS:  fstest.MapFS{},
 		Store: s,
 	})
 
@@ -307,7 +307,7 @@ func TestIngestResultBadJSON(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
 		Hub:   hub,
-		UIFS: fstest.MapFS{},
+		UIFS:  fstest.MapFS{},
 		Store: s,
 	})
 
@@ -506,7 +506,7 @@ func TestTaskEndpoint(t *testing.T) {
 func TestRunsEndpointNoStore(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{
-		Hub:   hub,
+		Hub:  hub,
 		UIFS: fstest.MapFS{},
 		// Store is nil — should return empty array
 	})

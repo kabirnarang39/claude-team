@@ -48,7 +48,7 @@ func (h *Hub) Broadcast(msg []byte) {
 	defer h.mu.Unlock()
 	for c := range h.clients {
 		if err := c.WriteMessage(websocket.TextMessage, msg); err != nil {
-			c.Close()
+			_ = c.Close()
 			delete(h.clients, c)
 		}
 	}
@@ -64,7 +64,7 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 		return conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline))
 	})
 	if err := conn.SetReadDeadline(time.Now().Add(wsPingInterval + wsPongDeadline)); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return
 	}
 	h.Register(conn)
@@ -79,7 +79,7 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(wsPongDeadline))
 			h.mu.Unlock()
 			if err != nil {
-				conn.Close()
+				_ = conn.Close()
 				return
 			}
 		}

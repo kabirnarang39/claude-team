@@ -18,7 +18,7 @@ import (
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Store == nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 		return
 	}
 	statuses, err := s.cfg.Store.GetAllStatuses()
@@ -26,7 +26,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		statuses = map[string]string{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(statuses)
+	_ = json.NewEncoder(w).Encode(statuses)
 }
 
 func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +77,7 @@ func (s *Server) handleTask(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(map[string]string{"run_id": runID})
+	_ = json.NewEncoder(w).Encode(map[string]string{"run_id": runID})
 }
 
 func (s *Server) findWorkflow(name string) *wflow.Workflow {
@@ -126,7 +126,7 @@ func agentsByPhase(w *wflow.Workflow) []store.PhaseAgentPair {
 func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Store == nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("[]"))
+		_, _ = w.Write([]byte("[]"))
 		return
 	}
 	runs, err := s.cfg.Store.GetRuns(20)
@@ -138,7 +138,7 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 		runs = []store.RunDetail{}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runs)
+	_ = json.NewEncoder(w).Encode(runs)
 }
 
 func (s *Server) handleRunDetail(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +157,7 @@ func (s *Server) handleRunDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(detail)
+	_ = json.NewEncoder(w).Encode(detail)
 }
 
 func (s *Server) handleWorkflowUpload(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +190,7 @@ func (s *Server) handleWorkflowActive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handleWorkflowSetActive(w http.ResponseWriter, r *http.Request) {
@@ -302,14 +302,17 @@ func (s *Server) handleFileUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	uploadDir := filepath.Join(s.cfg.RuntimeDir, "uploads")
-	os.MkdirAll(uploadDir, 0755)
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 	path := filepath.Join(uploadDir, filepath.Base(name))
 	if err := os.WriteFile(path, data, 0644); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"path": path})
+	_ = json.NewEncoder(w).Encode(map[string]string{"path": path})
 }
 
 func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
