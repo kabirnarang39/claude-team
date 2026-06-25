@@ -18,7 +18,16 @@ jobs:
         run: go mod download
       - name: Vet
         run: go vet ./...
-      - name: Test (with race detector)
-        run: go test -race ./...
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+      - name: Test with coverage
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.out
+          fail_ci_if_error: false
       - name: Build
         run: go build -o /dev/null .

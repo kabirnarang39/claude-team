@@ -23,7 +23,7 @@ Anton is a multi-agent engineering team coordinator. It runs specialist AI agent
 - `go test -race ./...` must pass before any commit
 - `go vet ./...` must be clean
 - Module path: `github.com/kabirnarang39/claude-team`
-- Go version: 1.22
+- Go version: 1.25
 - SQLite WAL mode, `INSERT OR IGNORE` for dedup
 - All HTTP handlers use `http.MaxBytesReader` before reading body
 - Server binds to `127.0.0.1` only (localhost)

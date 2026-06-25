@@ -9,7 +9,7 @@ cd mcp && npm install && cd ..
 go run main.go          # Anton running at http://localhost:3000
 ```
 
-**Requirements:** Go 1.22+, Node.js 20+, Claude Code
+**Requirements:** Go 1.25+, Node.js 20+, Claude Code
 
 Run tests before opening a PR:
 
