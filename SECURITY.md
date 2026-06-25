@@ -10,7 +10,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email: kabir.narang@zinier.com
+Email: kabirnarang39@gmail.com
 
 Include:
 - Description of the vulnerability
