@@ -15,7 +15,7 @@
 
   <!-- Offline banner -->
   <div id="offline-banner" class="offline-banner" style="display:none">
-    Server offline — start Anton with <code>go run main.go</code> then refresh
+    Server offline — start Anton with <code>anton</code> then refresh
   </div>
 
   <!-- Header: 52px -->
@@ -28,7 +28,10 @@
     <span class="hdr-run-title" id="hdr-run-title" style="display:none"></span>
     <span class="hdr-sep"></span>
     <!-- WS status -->
-    <div class="ws-dot" id="ws-dot" title="WebSocket connection"></div>
+    <div class="ws">
+      <span class="ws-lbl">live</span>
+      <div class="ws-dot" id="ws-dot" title="WebSocket connection"></div>
+    </div>
   </header>
 
   <!-- 3-zone layout -->
@@ -50,40 +53,63 @@
       <!-- Onboarding (no runs) -->
       <div id="onboarding-card" class="onboarding-card">
         <div class="ob-inner">
-          <div class="ob-icon">⚡</div>
-          <h2 class="ob-title">Welcome to Anton</h2>
-          <p class="ob-sub">Dispatch a task from Claude Code — watch 11 specialists work live.</p>
+          <div class="ob-hero">
+            <div class="ob-logo-mark">⚡</div>
+            <div class="ob-wordmark">Anton</div>
+          </div>
+          <h2 class="ob-title">Your AI engineering team,<br>on demand.</h2>
+          <p class="ob-sub">Describe any engineering task. Anton coordinates 11 specialist AI agents — planner, architect, engineers, QA, security, DevOps — in a live pipeline you can watch, inspect, and resume.</p>
+          <div class="ob-features">
+            <div class="ob-feature">
+              <span class="ob-feat-icon">⚡</span>
+              <span class="ob-feat-text">11 specialists run in parallel phases</span>
+            </div>
+            <div class="ob-feature">
+              <span class="ob-feat-icon">◉</span>
+              <span class="ob-feat-text">Live agent flow diagram with real-time status</span>
+            </div>
+            <div class="ob-feature">
+              <span class="ob-feat-icon">↺</span>
+              <span class="ob-feat-text">Crash-safe — resume any run from checkpoint</span>
+            </div>
+          </div>
+          <div class="ob-divider"></div>
           <div class="ob-steps">
             <div class="ob-step">
               <span class="ob-num">1</span>
               <div class="ob-step-body">
-                <div class="ob-step-title">Start Anton in your project</div>
+                <div class="ob-step-title">Start the server</div>
                 <code class="ob-code">go run main.go</code>
               </div>
             </div>
             <div class="ob-step">
               <span class="ob-num">2</span>
               <div class="ob-step-body">
-                <div class="ob-step-title">Open Claude Code in the same directory</div>
-                <code class="ob-code">claude</code>
+                <div class="ob-step-title">Dispatch from Claude Code</div>
+                <code class="ob-code">/team-dispatch build JWT auth</code>
               </div>
             </div>
             <div class="ob-step">
               <span class="ob-num">3</span>
               <div class="ob-step-body">
-                <div class="ob-step-title">Dispatch a task</div>
-                <code class="ob-code">/team-dispatch build user auth with JWT</code>
+                <div class="ob-step-title">Watch your team work live</div>
+                <code class="ob-code">← agents appear here in real time</code>
               </div>
             </div>
           </div>
           <div class="ob-footer">
             <a class="ob-link" href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener">GitHub ↗</a>
+            <span class="ob-sep">·</span>
+            <span class="ob-version">Beta</span>
           </div>
         </div>
       </div>
 
       <!-- Run detail (JS shows this when a run is selected) -->
       <div id="run-detail" style="display:none">
+
+        <!-- Phase timeline strip (always first in canvas) -->
+        <div class="phase-bar" id="phase-bar"></div>
 
         <!-- Orchestration card (approach.md) -->
         <div class="canvas-card" id="orchestration-section" style="display:none">
@@ -98,9 +124,6 @@
 
         <!-- Human review banner -->
         <div id="review-banner-container"></div>
-
-        <!-- Phase timeline strip -->
-        <div class="phase-bar" id="phase-bar"></div>
 
         <!-- DAG canvas (agent flow diagram) -->
         <div class="dag-wrap" id="dag-wrap">

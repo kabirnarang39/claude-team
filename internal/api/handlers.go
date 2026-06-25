@@ -417,21 +417,59 @@ func (s *Server) handleRunFiles(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not configured", 500)
 		return
 	}
+
 	runDir := filepath.Join(s.cfg.RuntimeDir, "runs", runID)
 	entries, err := os.ReadDir(runDir)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]string{})
+		json.NewEncoder(w).Encode([]any{})
 		return
 	}
-	names := []string{}
-	for _, e := range entries {
-		if !e.IsDir() {
-			names = append(names, e.Name())
-		}
+
+	// Build attribution index from agent_results (best-effort — nil store is OK)
+	index := map[string][2]string{}
+	if s.cfg.Store != nil {
+		index, _ = s.cfg.Store.GetDeliverableIndex(runID)
 	}
+
+	// Files to skip from the deliverables list
+	skip := map[string]bool{
+		"checkpoint.json": true,
+		"pending-task.md": true,
+	}
+
+	type FileEntry struct {
+		Name  string `json:"name"`
+		Size  int64  `json:"size"`
+		Mtime int64  `json:"mtime"`
+		Ext   string `json:"ext"`
+		Agent string `json:"agent"`
+		Phase string `json:"phase"`
+	}
+
+	result := []FileEntry{}
+	for _, e := range entries {
+		if e.IsDir() || skip[e.Name()] {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		ext := strings.TrimPrefix(filepath.Ext(e.Name()), ".")
+		attr := index[e.Name()]
+		result = append(result, FileEntry{
+			Name:  e.Name(),
+			Size:  info.Size(),
+			Mtime: info.ModTime().Unix(),
+			Ext:   ext,
+			Agent: attr[0],
+			Phase: attr[1],
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(names)
+	json.NewEncoder(w).Encode(result)
 }
 
 func (s *Server) handleRunFile(w http.ResponseWriter, r *http.Request) {

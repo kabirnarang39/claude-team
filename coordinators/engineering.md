@@ -16,7 +16,44 @@ Optional parallel (if workflow includes):
 
 ---
 
+## Phase Entry: Agent Checklist and Resume Check
+
+On entry (before dispatching any agent):
+
+**Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json — get `completed_agents.architecture` and `completed_agents.engineering` lists.
+
+**Create Claude tasks for all agents:**
+```
+TaskCreate({ subject: "Agent: senior-architect", description: "System design, ADR", activeForm: "Running senior-architect" })
+TaskCreate({ subject: "Agent: api-designer", description: "OpenAPI spec, API contracts", activeForm: "Running api-designer" })
+TaskCreate({ subject: "Agent: backend-engineer", description: "Backend implementation", activeForm: "Running backend-engineer" })
+TaskCreate({ subject: "Agent: frontend-engineer", description: "Frontend implementation", activeForm: "Running frontend-engineer" })
+TaskCreate({ subject: "Agent: dba", description: "Database schema and migrations", activeForm: "Running dba" })
+```
+
+On resume: call `TaskUpdate` with `status: "completed"` immediately for any agent already in `completed_agents`.
+
+Store task IDs.
+
+---
+
 ## Dispatch: senior-architect
+
+**Skip this section entirely if `senior-architect` is in `checkpoint.completed_agents.architecture`.**
+
+### Before dispatch
+- Write checkpoint.json — set `current_phase: "architecture"`, ensure `completed_agents.architecture` exists:
+  ```bash
+  python3 -c "
+  import json
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+      ck = json.load(f)
+  ck['current_phase'] = 'architecture'
+  ck['completed_agents'].setdefault('architecture', [])
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+      json.dump(ck, f, indent=2)
+  "
+  ```
 
 ### Step 1 — Signal RUNNING
 ```bash
@@ -24,6 +61,8 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
   -H "Content-Type: application/json" \
   -d "{\"run_id\":\"<run_id>\",\"phase\":\"architecture\",\"agent\":\"senior-architect\",\"status\":\"RUNNING\",\"summary\":\"Dispatching senior-architect...\"}"
 ```
+
+- Call `TaskUpdate`: `{ taskId: "<senior-architect-task-id>", status: "in_progress" }`
 
 ### Step 2 — Dispatch agent
 ```
@@ -54,11 +93,31 @@ if [ -f ".claude-team/runs/<run_id>/report-senior-architect.json" ]; then
 fi
 ```
 
+### After dispatch
+- Call `TaskUpdate`: `{ taskId: "<senior-architect-task-id>", status: "completed" }`
+- Append `senior-architect` to checkpoint:
+  ```bash
+  python3 -c "
+  import json
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+      ck = json.load(f)
+  ck['completed_agents'].setdefault('architecture', [])
+  if 'senior-architect' not in ck['completed_agents']['architecture']:
+      ck['completed_agents']['architecture'].append('senior-architect')
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+      json.dump(ck, f, indent=2)
+  "
+  ```
+
 ---
 
 ## Dispatch: api-designer
 
-After senior-architect DONE:
+After senior-architect DONE (or skipped on resume).
+
+**Skip this section entirely if `api-designer` is in `checkpoint.completed_agents.architecture`.**
+
+### Before dispatch
 
 ### Step 1 — Signal RUNNING
 ```bash
@@ -66,6 +125,8 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
   -H "Content-Type: application/json" \
   -d "{\"run_id\":\"<run_id>\",\"phase\":\"architecture\",\"agent\":\"api-designer\",\"status\":\"RUNNING\",\"summary\":\"Dispatching api-designer...\"}"
 ```
+
+- Call `TaskUpdate`: `{ taskId: "<api-designer-task-id>", status: "in_progress" }`
 
 ### Step 2 — Dispatch agent
 ```
@@ -92,11 +153,47 @@ if [ -f ".claude-team/runs/<run_id>/report-api-designer.json" ]; then
 fi
 ```
 
+### After dispatch
+- Call `TaskUpdate`: `{ taskId: "<api-designer-task-id>", status: "completed" }`
+- Append `api-designer` to checkpoint:
+  ```bash
+  python3 -c "
+  import json
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+      ck = json.load(f)
+  ck['completed_agents'].setdefault('architecture', [])
+  if 'api-designer' not in ck['completed_agents']['architecture']:
+      ck['completed_agents']['architecture'].append('api-designer')
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+      json.dump(ck, f, indent=2)
+  "
+  ```
+
 ---
 
 ## Dispatch: parallel engineers
 
 After api-designer DONE:
+
+**Resume handling for parallel engineers:**
+- Check `checkpoint.completed_agents.engineering` (may be missing key — treat as empty list)
+- Skip dispatching any agent whose name is in that list
+- Signal RUNNING only for agents NOT in the completed list
+- If ALL THREE are already completed (unlikely but possible): skip entire section
+
+**Before dispatch:**
+- Set `current_phase: "engineering"` in checkpoint.json:
+  ```bash
+  python3 -c "
+  import json
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+      ck = json.load(f)
+  ck['current_phase'] = 'engineering'
+  ck['completed_agents'].setdefault('engineering', [])
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+      json.dump(ck, f, indent=2)
+  "
+  ```
 
 ### Step 1 — Signal ALL THREE RUNNING before dispatching any
 
@@ -107,6 +204,13 @@ for agent in backend-engineer frontend-engineer dba; do
     -d "{\"run_id\":\"<run_id>\",\"phase\":\"engineering\",\"agent\":\"$agent\",\"status\":\"RUNNING\",\"summary\":\"Dispatching $agent...\"}"
 done
 ```
+
+- Call `TaskUpdate` for each non-completed parallel agent's task:
+  ```
+  For each agent in [backend-engineer, frontend-engineer, dba] that is NOT in checkpoint.completed_agents.engineering:
+    TaskUpdate({ taskId: "<{agent}-task-id>", status: "in_progress" })
+  ```
+  Use the task IDs stored from the Phase Entry TaskCreate calls above.
 
 ### Step 2 — Dispatch all three concurrently as sub-agents
 
@@ -160,6 +264,23 @@ for agent in backend-engineer frontend-engineer dba; do
   fi
 done
 ```
+
+### After each parallel agent completes
+For each of backend-engineer, frontend-engineer, dba — as each one finishes:
+- Call `TaskUpdate`: `{ taskId: "<agent-task-id>", status: "completed" }`
+- Append that agent to checkpoint immediately (don't wait for all three):
+  ```bash
+  python3 -c "
+  import json
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+      ck = json.load(f)
+  if 'AGENT_NAME' not in ck['completed_agents']['engineering']:
+      ck['completed_agents']['engineering'].append('AGENT_NAME')
+  with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+      json.dump(ck, f, indent=2)
+  "
+  ```
+  Replace `AGENT_NAME` with the actual agent name (`backend-engineer`, `frontend-engineer`, or `dba`).
 
 ## Escalation
 
