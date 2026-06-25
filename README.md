@@ -18,7 +18,7 @@ One slash command. They work in parallel. You watch them live in your browser.
 ![Parallelism](https://img.shields.io/badge/parallelism-3×_on_parallel_phases-blue)
 ![Context isolation](https://img.shields.io/badge/context_isolation-fresh_per_agent-purple)
 
-![Anton — 11 specialist agents working in parallel, live in your browser](docs/demo.gif)
+![Anton v3 dashboard — 11 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/demo.gif)
 
 > No Python. No new API key. No venv. Runs inside the Claude Code subscription you already have.
 
@@ -65,7 +65,9 @@ Phase 5 (DevOps):       devops-engineer
 
 ## 👁 Observability — Watch them work
 
-Every agent's reasoning is visible in real time. Click any node in the dashboard to read its full output. Nothing is hidden, nothing is a black box.
+Every agent's reasoning is visible in real time. The live DAG shows all phases and agents — click any node to open the inspector panel. Three tabs: **Agent** (full output + confidence score + token count), **Docs** (reference material the agent read), **Deliverables** (output files produced so far). Nothing is hidden, nothing is a black box.
+
+![Anton inspector — click any agent node to read its full output, docs, and deliverables](docs/screenshot-inspector.png)
 
 All outputs land in `.claude-team/runs/<run_id>/` as plain Markdown files — yours to read, edit, and version-control.
 
@@ -207,7 +209,7 @@ You → /team-dispatch → Main Coordinator (your Claude Code session)
 2. **The coordinator** reads the workflow YAML and spins up sub-coordinators per phase.
 3. **Each agent** reads its role prompt, does its work, and reports via the MCP tool.
 4. **Anton's Go server** writes results to SQLite and streams updates over WebSocket.
-5. **The dashboard** shows live progress — click any agent to read its full output.
+5. **The dashboard** shows live progress — click any agent node to open the inspector (output · docs · deliverables).
 
 ---
 
