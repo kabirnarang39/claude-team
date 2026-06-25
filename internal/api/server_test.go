@@ -345,9 +345,17 @@ func TestRunFilesEndpoints(t *testing.T) {
 		if w.Code != 200 {
 			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body)
 		}
-		var files []string
+		type FileEntry struct {
+			Name  string `json:"name"`
+			Size  int64  `json:"size"`
+			Mtime int64  `json:"mtime"`
+			Ext   string `json:"ext"`
+			Agent string `json:"agent"`
+			Phase string `json:"phase"`
+		}
+		var files []FileEntry
 		json.NewDecoder(w.Body).Decode(&files)
-		if len(files) != 1 || files[0] != "adr.md" {
+		if len(files) != 1 || files[0].Name != "adr.md" {
 			t.Errorf("expected [adr.md], got %v", files)
 		}
 	})
