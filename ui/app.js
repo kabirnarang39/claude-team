@@ -25,6 +25,13 @@ const PIXEL_CHARS = {
   arya:     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='4' y='0' width='2' height='1' fill='#0EA5E9'/><rect x='3' y='1' width='4' height='2' fill='#0F172A'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#0EA5E9'/><rect x='0' y='8' width='1' height='3' fill='#0EA5E9'/><rect x='9' y='7' width='2' height='4' fill='#BAE6FD'/><rect x='1' y='10' width='8' height='1' fill='#0369A1'/><rect x='2' y='11' width='2' height='3' fill='#0EA5E9'/><rect x='6' y='11' width='2' height='3' fill='#0EA5E9'/><rect x='1' y='13' width='3' height='1' fill='#0369A1'/><rect x='6' y='13' width='3' height='1' fill='#0369A1'/></svg>`,
   jonsnow:  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='2' y='0' width='6' height='3' fill='#334155'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#CBD5E1'/><rect x='0' y='7' width='1' height='4' fill='#94A3B8'/><rect x='9' y='7' width='1' height='4' fill='#94A3B8'/><rect x='1' y='10' width='8' height='1' fill='#475569'/><rect x='2' y='11' width='2' height='3' fill='#94A3B8'/><rect x='6' y='11' width='2' height='3' fill='#94A3B8'/><rect x='1' y='13' width='3' height='1' fill='#334155'/><rect x='6' y='13' width='3' height='1' fill='#334155'/></svg>`,
   floki:    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='1' y='0' width='1' height='3' fill='#06B6D4'/><rect x='8' y='0' width='1' height='3' fill='#06B6D4'/><rect x='1' y='2' width='8' height='1' fill='#06B6D4'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#06B6D4'/><rect x='0' y='8' width='1' height='3' fill='#06B6D4'/><rect x='9' y='8' width='2' height='2' fill='#A5F3FC'/><rect x='1' y='10' width='8' height='1' fill='#0891B2'/><rect x='2' y='11' width='2' height='3' fill='#06B6D4'/><rect x='6' y='11' width='2' height='3' fill='#06B6D4'/><rect x='1' y='13' width='3' height='1' fill='#0891B2'/><rect x='6' y='13' width='3' height='1' fill='#0891B2'/></svg>`,
+  merlin:   `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='4' y='0' width='2' height='1' fill='#6366F1'/><rect x='3' y='1' width='4' height='1' fill='#6366F1'/><rect x='1' y='2' width='8' height='1' fill='#6366F1'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#6366F1'/><rect x='0' y='8' width='1' height='3' fill='#6366F1'/><rect x='9' y='8' width='1' height='3' fill='#6366F1'/><rect x='4' y='8' width='2' height='1' fill='#C7D2FE'/><rect x='1' y='10' width='8' height='1' fill='#4338CA'/><rect x='2' y='11' width='2' height='3' fill='#6366F1'/><rect x='6' y='11' width='2' height='3' fill='#6366F1'/><rect x='1' y='13' width='3' height='1' fill='#4338CA'/><rect x='6' y='13' width='3' height='1' fill='#4338CA'/></svg>`,
+  bjorn:    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='0' y='0' width='2' height='2' fill='#10B981'/><rect x='8' y='0' width='2' height='2' fill='#10B981'/><rect x='1' y='1' width='8' height='2' fill='#10B981'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#10B981'/><rect x='0' y='8' width='1' height='3' fill='#10B981'/><rect x='9' y='8' width='1' height='3' fill='#10B981'/><rect x='1' y='10' width='8' height='1' fill='#059669'/><rect x='2' y='11' width='2' height='3' fill='#10B981'/><rect x='6' y='11' width='2' height='3' fill='#10B981'/><rect x='1' y='13' width='3' height='1' fill='#059669'/><rect x='6' y='13' width='3' height='1' fill='#059669'/></svg>`,
+  rollo:    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='2' y='0' width='6' height='3' fill='#22C55E'/><rect x='1' y='2' width='8' height='1' fill='#22C55E'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#22C55E'/><rect x='0' y='8' width='1' height='3' fill='#22C55E'/><rect x='9' y='8' width='1' height='3' fill='#22C55E'/><rect x='1' y='10' width='8' height='1' fill='#15803D'/><rect x='2' y='11' width='2' height='3' fill='#22C55E'/><rect x='6' y='11' width='2' height='3' fill='#22C55E'/><rect x='1' y='13' width='3' height='1' fill='#15803D'/><rect x='6' y='13' width='3' height='1' fill='#15803D'/></svg>`,
+  halfdan:  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='2' y='1' width='6' height='2' fill='#64748B'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='2' y='4' width='2' height='1' fill='#64748B'/><rect x='6' y='4' width='2' height='1' fill='#64748B'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='7' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='4' width='2' height='1' fill='#CBD5E1'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#64748B'/><rect x='0' y='8' width='1' height='3' fill='#64748B'/><rect x='9' y='8' width='1' height='3' fill='#64748B'/><rect x='1' y='10' width='8' height='1' fill='#475569'/><rect x='2' y='11' width='2' height='3' fill='#64748B'/><rect x='6' y='11' width='2' height='3' fill='#64748B'/><rect x='1' y='13' width='3' height='1' fill='#475569'/><rect x='6' y='13' width='3' height='1' fill='#475569'/></svg>`,
+  ygritte:  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='0' y='1' width='3' height='3' fill='#F43F5E'/><rect x='7' y='1' width='3' height='3' fill='#F43F5E'/><rect x='3' y='1' width='4' height='2' fill='#F43F5E'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#F43F5E'/><rect x='0' y='7' width='1' height='4' fill='#FDA4AF'/><rect x='9' y='7' width='1' height='4' fill='#FDA4AF'/><rect x='1' y='10' width='8' height='1' fill='#BE123C'/><rect x='2' y='11' width='2' height='3' fill='#F43F5E'/><rect x='6' y='11' width='2' height='3' fill='#F43F5E'/><rect x='1' y='13' width='3' height='1' fill='#BE123C'/><rect x='6' y='13' width='3' height='1' fill='#BE123C'/></svg>`,
+  eddard:   `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='2' y='0' width='6' height='3' fill='#0F766E'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='6' width='2' height='1' fill='#92400E'/><rect x='1' y='7' width='8' height='4' fill='#0D9488'/><rect x='0' y='7' width='1' height='4' fill='#99F6E4'/><rect x='9' y='7' width='1' height='4' fill='#99F6E4'/><rect x='1' y='10' width='8' height='1' fill='#0F766E'/><rect x='2' y='11' width='2' height='3' fill='#0D9488'/><rect x='6' y='11' width='2' height='3' fill='#0D9488'/><rect x='1' y='13' width='3' height='1' fill='#0F766E'/><rect x='6' y='13' width='3' height='1' fill='#0F766E'/></svg>`,
+  sherlock: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14'><rect x='0' y='2' width='10' height='1' fill='#78350F'/><rect x='2' y='0' width='6' height='3' fill='#92400E'/><rect x='2' y='3' width='6' height='4' fill='#FCD34D'/><rect x='3' y='4' width='1' height='1' fill='#0F172A'/><rect x='6' y='4' width='1' height='1' fill='#0F172A'/><rect x='4' y='5' width='2' height='1' fill='#0F172A'/><rect x='1' y='7' width='8' height='4' fill='#92400E'/><rect x='0' y='8' width='1' height='3' fill='#92400E'/><rect x='9' y='8' width='1' height='3' fill='#92400E'/><rect x='1' y='10' width='8' height='1' fill='#78350F'/><rect x='2' y='11' width='2' height='3' fill='#92400E'/><rect x='6' y='11' width='2' height='3' fill='#92400E'/><rect x='1' y='13' width='3' height='1' fill='#78350F'/><rect x='6' y='13' width='3' height='1' fill='#78350F'/></svg>`,
 }
 const PIXEL_ART_URIS = {}
 ;(function() {
@@ -40,30 +47,42 @@ function getAvatarURI(agentName) {
 
 // ── Agent personas — character display names + role icons ────────────────────
 const AGENT_PERSONA = {
-  'orchestrator':          { display: 'Odin',     icon: '⚡' },
-  'coordinator':           { display: 'Odin',     icon: '⚡' },
-  'planner':               { display: 'Tyrion',   icon: '◈'  },
-  'requirements-analyst':  { display: 'Tyrion',   icon: '◈'  },
-  'researcher':            { display: 'Samwell',  icon: '⊕'  },
-  'tech-writer':           { display: 'Samwell',  icon: '⊕'  },
-  'architect':             { display: 'Bran',     icon: '△'  },
-  'senior-architect':      { display: 'Bran',     icon: '△'  },
-  'api-designer':          { display: 'Bran',     icon: '△'  },
-  'backend-eng':           { display: 'Ragnar',   icon: '⚙'  },
-  'backend-engineer':      { display: 'Ragnar',   icon: '⚙'  },
-  'frontend-eng':          { display: 'Lagertha', icon: '◱'  },
-  'frontend-engineer':     { display: 'Lagertha', icon: '◱'  },
-  'dba':                   { display: 'Ragnar',   icon: '⚙'  },
-  'qa':                    { display: 'Arya',     icon: '✦'  },
-  'qa-agent':              { display: 'Arya',     icon: '✦'  },
-  'qa-engineer':           { display: 'Arya',     icon: '✦'  },
-  'e2e-tester':            { display: 'Arya',     icon: '✦'  },
-  'security':              { display: 'Jon Snow', icon: '⬡'  },
-  'security-reviewer':     { display: 'Jon Snow', icon: '⬡'  },
-  'code-reviewer':         { display: 'Jon Snow', icon: '⬡'  },
-  'devops':                { display: 'Floki',    icon: '◎'  },
-  'devops-agent':          { display: 'Floki',    icon: '◎'  },
-  'devops-engineer':       { display: 'Floki',    icon: '◎'  },
+  // Coordination
+  'orchestrator':          { display: 'Odin',      icon: '⚡' },
+  'coordinator':           { display: 'Odin',      icon: '⚡' },
+  // Planning
+  'planner':               { display: 'Tyrion',    icon: '◈'  },
+  'requirements-analyst':  { display: 'Tyrion',    icon: '◈'  },
+  'researcher':            { display: 'Samwell',   icon: '⊕'  },
+  'tech-writer':           { display: 'Samwell',   icon: '⊕'  },
+  // Architecture
+  'architect':             { display: 'Bran',      icon: '△'  },
+  'senior-architect':      { display: 'Bran',      icon: '△'  },
+  'api-designer':          { display: 'Merlin',    icon: '◇'  },
+  // Engineering — each unique
+  'backend-eng':           { display: 'Ragnar',    icon: '⚙'  },
+  'backend-engineer':      { display: 'Ragnar',    icon: '⚙'  },
+  'backend-engineer-1':    { display: 'Ragnar',    icon: '⚙'  },
+  'backend-engineer-2':    { display: 'Bjorn',     icon: '⚙'  },
+  'backend-engineer-3':    { display: 'Rollo',     icon: '⚙'  },
+  'frontend-eng':          { display: 'Lagertha',  icon: '◱'  },
+  'frontend-engineer':     { display: 'Lagertha',  icon: '◱'  },
+  'dba':                   { display: 'Halfdan',   icon: '⊟'  },
+  // QA — testers unique
+  'qa':                    { display: 'Arya',      icon: '✦'  },
+  'qa-agent':              { display: 'Arya',      icon: '✦'  },
+  'qa-engineer':           { display: 'Arya',      icon: '✦'  },
+  'e2e-tester':            { display: 'Ygritte',   icon: '✧'  },
+  // Security & review — each unique
+  'security':              { display: 'Jon Snow',  icon: '⬡'  },
+  'security-reviewer':     { display: 'Jon Snow',  icon: '⬡'  },
+  'code-reviewer':         { display: 'Eddard',    icon: '⬢'  },
+  // DevOps
+  'devops':                { display: 'Floki',     icon: '◎'  },
+  'devops-agent':          { display: 'Floki',     icon: '◎'  },
+  'devops-engineer':       { display: 'Floki',     icon: '◎'  },
+  // Debug / incident
+  'debugger':              { display: 'Sherlock',  icon: '◉'  },
 }
 
 // Phase-specific colors for the DAG
@@ -193,13 +212,32 @@ function toggleSection(bodyId) {
 // (legacy constants removed — replaced by new renderTreeSimple layout)
 
 // ── Inspector tab switching ──────────────────────────────────────────────────
-function switchInspectorTab(tab) {
+let _userSelectedTab = null  // track explicit user tab choice
+
+function switchInspectorTab(tab, byUser) {
+  if (byUser) _userSelectedTab = tab
   document.querySelectorAll('.itab').forEach(b => b.classList.remove('active'))
   document.querySelectorAll('.itab-panel').forEach(p => p.style.display = 'none')
   const btn = document.getElementById(`itab-btn-${tab}`)
   const panel = document.getElementById(`itab-${tab}`)
   if (btn) btn.classList.add('active')
   if (panel) panel.style.display = 'flex'
+}
+
+// ── Desktop notifications ─────────────────────────────────────────────────────
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
+}
+
+function notifyRunDone(payload) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const wf  = payload.workflow_name || 'run'
+  const cnt = payload.agent_count   || ''
+  const body = cnt ? `${wf} finished · ${cnt} agents` : `${wf} finished`
+  const n = new Notification('⚡ Anton — task complete', { body, icon: '/favicon.ico', tag: payload.id })
+  n.onclick = () => { window.focus(); if (payload.id) loadRunDetail(payload.id) }
 }
 
 // ── Boot ────────────────────────────────────────────────────────────────────
@@ -211,6 +249,7 @@ async function init() {
   renderTreeSimple()
   updateOnboardingVisibility()
   switchInspectorTab('agent')
+  requestNotifPermission()
   // Poll active run every 6s — agent results land in SQLite async
   setInterval(async () => {
     if (state.activeRun) await refreshActiveRun()
@@ -239,6 +278,7 @@ async function refreshActiveRun() {
     }
     await renderPhaseOutputs(state.activeRun.id)
     await renderOrchestrationCard(state.activeRun.id)
+    await renderDeliverables(state.activeRun.id)
     // also refresh run list to catch status changes
     const rres = await fetch('/api/runs')
     if (rres.ok) { state.runs = await rres.json() || []; renderRunHistory(); updateOnboardingVisibility() }
@@ -262,6 +302,9 @@ function connectWS() {
       if (evt.type === 'agent_result') { onAgentResult(evt.payload); loadStats() }
       if (evt.type === 'review_pending') { onReviewPending(evt.payload) }
       if (evt.type === 'review_resolved') { onReviewResolved(evt.payload) }
+      if (evt.type === 'run_update' && evt.payload?.status === 'done') {
+        notifyRunDone(evt.payload)
+      }
     } catch (_) {}
   }
 }
@@ -280,10 +323,19 @@ function renderStats(s) {
   if (!panel) return
   if (!s || s.runs_total === 0) { panel.style.display = 'none'; return }
   panel.style.display = 'block'
-  document.getElementById('stat-agents-line').textContent =
-    `${fmtNum(s.agents_total)} agents dispatched`
-  document.getElementById('stat-tokens-line').textContent =
-    `${fmtNum(s.tokens_total)} tokens · ${s.parallelism_speedup.toFixed(1)}× speedup`
+  const running = (state.runs || []).filter(r => r.status === 'running').length
+  const runLabel = running > 0
+    ? `${s.runs_total} runs · <span class="stat-live">${running} live</span>`
+    : `${s.runs_total} runs`
+  // Context savings: (1 - 1/isolation_mult) * 100
+  const ctxSavings = s.context_isolation_multiplier > 1
+    ? Math.round((1 - 1 / s.context_isolation_multiplier) * 100)
+    : 0
+  document.getElementById('stat-agents-line').innerHTML =
+    `${fmtNum(s.agents_total)} agents · ${runLabel}`
+  document.getElementById('stat-tokens-line').innerHTML =
+    `${fmtNum(s.tokens_total)} tok · <span title="avg agents running in parallel per phase">${s.parallelism_speedup.toFixed(1)}× parallel</span>` +
+    (ctxSavings > 0 ? ` · <span title="context saved vs solo session">${ctxSavings}% ctx saved</span>` : '')
 }
 
 function fmtNum(n) {
@@ -384,6 +436,10 @@ async function loadRuns() {
 }
 
 async function loadRunDetail(runId) {
+  // clear deliverables list and tab memory so switching runs starts fresh
+  const listEl = document.getElementById('deliverables-list')
+  if (listEl) listEl.innerHTML = ''
+  _userSelectedTab = null
   // mark active in sidebar
   document.querySelectorAll('.run-item').forEach(el => el.classList.remove('active'))
   const active = document.querySelector(`.run-item[data-id="${runId}"]`)
@@ -404,13 +460,17 @@ async function loadRunDetail(runId) {
     renderReviewBanner()
     renderPhaseBar()
     renderTreeSimple()
-    if (state.agents.length > 0) selectAgentData(state.agents[state.agents.length - 1])
-    else document.getElementById('active-card').style.display = 'none'
+    renderRunSummaryCard(detail)
+    if (state.agents.length > 0 && !document.getElementById('run-summary-card')) {
+      selectAgentData(state.agents[state.agents.length - 1])
+    }
 
-    // Update header run title
+    // Update header run title — show workflow + task excerpt, not raw UUID
     const titleEl = document.getElementById('hdr-run-title')
     if (titleEl) {
-      titleEl.textContent = `${detail.id} · ${detail.workflow_name}`
+      const wf = detail.workflow_name || ''
+      const task = (detail.task_text || '').slice(0, 48)
+      titleEl.textContent = task ? `${wf} — ${task}` : wf
       titleEl.style.display = 'inline'
     }
 
@@ -420,6 +480,7 @@ async function loadRunDetail(runId) {
     // New: load orchestration card and phase outputs
     await renderOrchestrationCard(runId)
     await renderPhaseOutputs(runId)
+    await renderDeliverables(runId)
   } catch (_) {}
 }
 
@@ -442,14 +503,17 @@ function renderRunHistory() {
     const resumeBtn = showResume
       ? `<button class="ri-resume-btn" onclick="event.stopPropagation();openResumeModal('${esc(r.id)}')">Resume</button>`
       : ''
+    const wfBadge = r.workflow_name
+      ? `<span class="ri-wf-badge">${esc(r.workflow_name.replace(/-/g, ' '))}</span>`
+      : ''
     return `
       <div class="run-item${isActive ? ' active' : ''}" data-id="${esc(r.id)}" onclick="loadRunDetail('${esc(r.id)}')">
         <div class="ri-header">
           <span class="status-badge" style="background:${dotColor}${dotGlow}"></span>
-          <span class="ri-name">${esc(r.workflow_name || r.id)}</span>
+          <span class="ri-name">${esc(friendlyRunName(r))}</span>
           ${resumeBtn}
         </div>
-        <div class="ri-meta">${esc(taskExcerpt || r.id)} · ${fmtTime(r.started_at)}</div>
+        <div class="ri-meta">${wfBadge}<span class="ri-time">${fmtTime(r.started_at)}</span></div>
       </div>`
   }).join('')
 }
@@ -855,6 +919,64 @@ function renderTreeSimple() {
   svg.innerHTML = defs + body
 }
 
+function renderRunSummaryCard(detail) {
+  const emptyEl = document.getElementById('agent-empty')
+  const cardEl  = document.getElementById('active-card')
+  if (!emptyEl || !cardEl) return
+
+  // Remove any existing summary card
+  const old = document.getElementById('run-summary-card')
+  if (old) old.remove()
+
+  const phases = detail.phases || []
+  const agents = detail.results || []
+  const done   = phases.filter(p => p.status === 'done').length
+  const total  = phases.length
+  const tokens = agents.reduce((s, a) => s + (a.tokens_used || 0), 0)
+  const wf     = detail.workflow_name || ''
+
+  // Concerns across all agents
+  const concerns = agents.flatMap(a => {
+    try { return typeof a.concerns_json === 'string' ? JSON.parse(a.concerns_json) : (a.concerns_json || []) } catch(_){ return [] }
+  }).slice(0, 3)
+
+  const statusColor = detail.status === 'done'    ? 'var(--green)'
+                    : detail.status === 'running'  ? 'var(--amber)'
+                    : detail.status === 'blocked'  ? 'var(--red)'
+                    : 'var(--muted)'
+
+  const summary = document.createElement('div')
+  summary.id = 'run-summary-card'
+  summary.className = 'run-summary-card'
+  summary.innerHTML = `
+    <div class="rsc-header">
+      <span class="rsc-wf">${esc(wf.replace(/-/g, ' '))}</span>
+      <span class="rsc-status" style="color:${statusColor}">${esc(detail.status || '')}</span>
+    </div>
+    <div class="rsc-metrics">
+      <div class="rsc-metric"><span class="rsc-num">${agents.length}</span><span class="rsc-lbl">agents</span></div>
+      <div class="rsc-metric"><span class="rsc-num">${done}/${total}</span><span class="rsc-lbl">phases</span></div>
+      <div class="rsc-metric"><span class="rsc-num">${fmtNum(tokens)}</span><span class="rsc-lbl">tokens</span></div>
+    </div>
+    ${concerns.length ? `
+    <div class="rsc-concerns-label">Key findings</div>
+    <div class="rsc-concerns">${concerns.map(c => `<div class="rsc-concern">⚠ ${esc(c)}</div>`).join('')}</div>
+    ` : ''}
+    <div class="rsc-hint">Click any agent node in the diagram to inspect its output</div>
+  `
+
+  emptyEl.style.display = 'none'
+  cardEl.style.display   = 'none'
+  // Insert before agent-empty inside itab-agent
+  const panel = document.getElementById('itab-agent')
+  if (panel) panel.insertBefore(summary, panel.firstChild)
+}
+
+function clearRunSummaryCard() {
+  const el = document.getElementById('run-summary-card')
+  if (el) el.remove()
+}
+
 function selectAgentByName(name) {
   const ag = state.agents.find(a => a.agent === name)
   if (ag) selectAgentData(ag)
@@ -862,7 +984,7 @@ function selectAgentByName(name) {
 
 function selectAgentData(ag) {
   if (!ag) return
-  // Show/hide inspector empty state
+  clearRunSummaryCard()
   document.getElementById('agent-empty').style.display = 'none'
   const card = document.getElementById('active-card')
   card.style.display = 'flex'
@@ -895,8 +1017,10 @@ function selectAgentData(ag) {
     delivEl.style.display = 'none'
   }
 
-  // Switch to agent tab
-  switchInspectorTab('agent')
+  // Only auto-switch to agent tab if user hasn't manually chosen another tab
+  if (!_userSelectedTab || _userSelectedTab === 'agent') {
+    switchInspectorTab('agent')
+  }
 }
 
 // ── Orchestration card ───────────────────────────────────────────────────────
@@ -969,6 +1093,137 @@ async function renderOrchestrationCard(runId) {
   } catch (_) {
     section.style.display = 'none'
   }
+}
+
+// ── Deliverables tab ──────────────────────────────────────────────────────────
+const DELIV_BADGE_CLASS = {
+  md:   'deliv-badge-md',
+  yaml: 'deliv-badge-yaml',
+  yml:  'deliv-badge-yaml',
+  json: 'deliv-badge-json',
+  txt:  'deliv-badge-txt',
+  html: 'deliv-badge-html',
+  png:  'deliv-badge-img',
+  jpg:  'deliv-badge-img',
+  jpeg: 'deliv-badge-img',
+  gif:  'deliv-badge-img',
+  webp: 'deliv-badge-img',
+  svg:  'deliv-badge-img',
+}
+const DELIV_OPEN_EXTS = new Set(['html','png','jpg','jpeg','gif','webp','svg'])
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B'
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB'
+  return (n / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
+function delivItemHTML(runId, f, i) {
+  const badgeCls = DELIV_BADGE_CLASS[f.ext] || 'deliv-badge-other'
+  const attr = (f.agent && f.phase)
+    ? `<div class="deliv-attr">${esc(f.agent)} · ${esc(f.phase)}</div>`
+    : ''
+  const copyPath = `.claude-team/runs/${runId}/${f.name}`
+  return `
+    <div class="deliv-item" data-name="${esc(f.name)}" data-idx="${i}">
+      <div class="deliv-row">
+        <span class="deliv-badge ${badgeCls}">${esc(f.ext || '?')}</span>
+        <span class="deliv-name">${esc(f.name)}</span>
+        <span class="deliv-size">${fmtBytes(f.size)}</span>
+      </div>
+      ${attr}
+      <div class="deliv-actions">
+        <button class="deliv-preview-btn" onclick="toggleDelivPreview('${esc(runId)}','${esc(f.name)}',${i},this)">Preview</button>
+        ${DELIV_OPEN_EXTS.has(f.ext) ? `<a class="deliv-open-btn" href="/api/runs/${esc(runId)}/files/${esc(f.name)}/raw" target="_blank">Open</a>` : ''}
+        <button class="deliv-copy-btn" onclick="copyDelivPath('${esc(copyPath)}',this)">Copy path</button>
+      </div>
+      <div class="deliv-preview" id="deliv-preview-${i}" style="display:none"></div>
+    </div>`
+}
+
+async function renderDeliverables(runId) {
+  const listEl   = document.getElementById('deliverables-list')
+  const emptyEl  = document.getElementById('deliverables-empty')
+  if (!listEl || !emptyEl) return
+
+  let files = []
+  try {
+    const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files`)
+    if (res.ok) files = await res.json()
+  } catch (_) {}
+
+  if (!Array.isArray(files) || files.length === 0) {
+    emptyEl.style.display = 'flex'
+    listEl.style.display  = 'none'
+    return
+  }
+
+  emptyEl.style.display = 'none'
+  listEl.style.display  = 'flex'
+
+  // Reconcile: only add items that don't exist yet — never touch existing nodes.
+  // This preserves open preview iframes across the 6s poll cycle.
+  const existing = new Set(
+    Array.from(listEl.querySelectorAll('.deliv-item')).map(el => el.dataset.name)
+  )
+  files.forEach((f, i) => {
+    if (existing.has(f.name)) return  // already rendered — leave it alone
+    const tmp = document.createElement('div')
+    tmp.innerHTML = delivItemHTML(runId, f, i)
+    listEl.appendChild(tmp.firstElementChild)
+  })
+}
+
+async function toggleDelivPreview(runId, name, i, btn) {
+  const previewEl = document.getElementById('deliv-preview-' + i)
+  if (!previewEl) return
+  if (previewEl.style.display !== 'none') {
+    previewEl.style.display = 'none'
+    btn.textContent = 'Preview'
+    return
+  }
+  btn.textContent = 'Loading…'
+  const ext = name.split('.').pop().toLowerCase()
+  const rawUrl = `/api/runs/${encodeURIComponent(runId)}/files/${encodeURIComponent(name)}/raw`
+  try {
+    const IMG_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']
+    if (IMG_EXTS.includes(ext)) {
+      previewEl.innerHTML = `<img src="${rawUrl}" style="max-width:100%;border-radius:6px;display:block">`
+      previewEl.style.display = 'block'
+      btn.textContent = 'Hide'
+      return
+    }
+    const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files/${encodeURIComponent(name)}`)
+    if (!res.ok) throw new Error('not found')
+    const data = await res.json()
+    const content = data.content || ''
+    let rendered
+    if (ext === 'html') {
+      const blob = new Blob([content], { type: 'text/html' })
+      const blobUrl = URL.createObjectURL(blob)
+      rendered = `<iframe src="${blobUrl}" sandbox="allow-same-origin allow-scripts" style="width:100%;height:540px;border:none;border-radius:6px;" onload="URL.revokeObjectURL(this.src)"></iframe>`
+    } else if (ext === 'md') {
+      rendered = renderMarkdown(content)
+    } else {
+      rendered = `<pre><code>${content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0,8000)}</code></pre>`
+    }
+    previewEl.innerHTML = rendered
+    previewEl.style.display = 'block'
+    btn.textContent = 'Hide'
+  } catch (_) {
+    previewEl.innerHTML = '<em style="color:var(--muted)">Preview unavailable</em>'
+    previewEl.style.display = 'block'
+    btn.textContent = 'Hide'
+  }
+}
+
+function copyDelivPath(path, btn) {
+  if (!navigator.clipboard) return
+  navigator.clipboard.writeText(path).then(() => {
+    const orig = btn.textContent
+    btn.textContent = 'Copied!'
+    setTimeout(() => { btn.textContent = orig }, 1800)
+  })
 }
 
 // ── Phase outputs ─────────────────────────────────────────────────────────────
@@ -1213,7 +1468,25 @@ function esc(s) {
 function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n) }
 function fmtTime(unix) {
   if (!unix) return '—'
-  return new Date(unix * 1000).toLocaleTimeString()
+  const d = new Date(unix * 1000)
+  const now = new Date()
+  const diffMs = now - d
+  const diffMin = diffMs / 60000
+  const diffHr = diffMs / 3600000
+  const diffDay = diffMs / 86400000
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${Math.floor(diffMin)}m ago`
+  if (diffHr < 24) return `${Math.floor(diffHr)}h ago`
+  if (diffDay < 7) return `${Math.floor(diffDay)}d ago`
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+// Strip timestamp suffix from run IDs — "demo-jwt-auth-1782385638" → "jwt-auth"
+function friendlyRunName(run) {
+  if (run.task_text) return run.task_text.slice(0, 36) + (run.task_text.length > 36 ? '…' : '')
+  const wf = run.workflow_name || run.id
+  // strip leading "demo-" and trailing "-<timestamp>"
+  return wf.replace(/^demo-/, '').replace(/-\d{9,}$/, '').replace(/-/g, ' ')
 }
 
 document.addEventListener('DOMContentLoaded', init)

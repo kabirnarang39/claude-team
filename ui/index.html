@@ -53,55 +53,146 @@
       <!-- Onboarding (no runs) -->
       <div id="onboarding-card" class="onboarding-card">
         <div class="ob-inner">
+
+          <!-- Glow orb -->
+          <div class="ob-glow-orb"></div>
+
+          <!-- Badge + hero -->
+          <div class="ob-eyebrow">
+            <span class="ob-badge">Multi-agent AI engineering</span>
+          </div>
           <div class="ob-hero">
             <div class="ob-logo-mark">⚡</div>
             <div class="ob-wordmark">Anton</div>
           </div>
-          <h2 class="ob-title">Your AI engineering team,<br>on demand.</h2>
-          <p class="ob-sub">Describe any engineering task. Anton coordinates 11 specialist AI agents — planner, architect, engineers, QA, security, DevOps — in a live pipeline you can watch, inspect, and resume.</p>
-          <div class="ob-features">
-            <div class="ob-feature">
-              <span class="ob-feat-icon">⚡</span>
-              <span class="ob-feat-text">11 specialists run in parallel phases</span>
+          <h2 class="ob-title">Your Claude Code just got<br>a team of 11 specialists.</h2>
+          <p class="ob-sub">One slash command. A full engineering team — planner, architect, three engineers, QA, security, DevOps — fires up and works in parallel. You watch them live.</p>
+
+          <!-- Terminal command box -->
+          <div class="ob-terminal">
+            <div class="ob-terminal-bar">
+              <span class="ob-dot ob-dot-r"></span>
+              <span class="ob-dot ob-dot-y"></span>
+              <span class="ob-dot ob-dot-g"></span>
+              <span class="ob-terminal-title">Claude Code</span>
             </div>
-            <div class="ob-feature">
-              <span class="ob-feat-icon">◉</span>
-              <span class="ob-feat-text">Live agent flow diagram with real-time status</span>
+            <div class="ob-terminal-body">
+              <span class="ob-prompt">›</span>
+              <span class="ob-cmd">/team-dispatch</span>
+              <span class="ob-cmd-arg"> build Stripe billing with usage metering</span>
             </div>
-            <div class="ob-feature">
-              <span class="ob-feat-icon">↺</span>
-              <span class="ob-feat-text">Crash-safe — resume any run from checkpoint</span>
+            <div class="ob-terminal-output">
+              <span class="ob-out-dim">⚡ Anton dispatching 11 specialists across 5 phases…</span>
             </div>
           </div>
+
+          <!-- Pipeline visual -->
+          <div class="ob-pipeline">
+            <div class="ob-phase ob-phase-plan">
+              <div class="ob-phase-label">Planning</div>
+              <div class="ob-agents">
+                <div class="ob-agent"><span class="ob-agent-icon">◈</span>Tyrion</div>
+                <div class="ob-agent"><span class="ob-agent-icon">⊕</span>Samwell</div>
+              </div>
+            </div>
+            <div class="ob-phase-arrow">→</div>
+            <div class="ob-phase ob-phase-eng">
+              <div class="ob-phase-label">Engineering</div>
+              <div class="ob-agents">
+                <div class="ob-agent"><span class="ob-agent-icon">△</span>Bran</div>
+                <div class="ob-agent"><span class="ob-agent-icon">⚙</span>Ragnar</div>
+                <div class="ob-agent ob-agent-more">+4 more</div>
+              </div>
+            </div>
+            <div class="ob-phase-arrow">→</div>
+            <div class="ob-phase ob-phase-qa">
+              <div class="ob-phase-label">QA</div>
+              <div class="ob-agents">
+                <div class="ob-agent"><span class="ob-agent-icon">✦</span>Arya</div>
+                <div class="ob-agent"><span class="ob-agent-icon">⬡</span>Jon Snow</div>
+              </div>
+            </div>
+            <div class="ob-phase-arrow">→</div>
+            <div class="ob-phase ob-phase-ops">
+              <div class="ob-phase-label">DevOps</div>
+              <div class="ob-agents">
+                <div class="ob-agent"><span class="ob-agent-icon">⬢</span>Eddard</div>
+                <div class="ob-agent"><span class="ob-agent-icon">◎</span>Floki</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="ob-stats-row">
+            <div class="ob-stat">
+              <div class="ob-stat-num">11</div>
+              <div class="ob-stat-label">Specialists</div>
+            </div>
+            <div class="ob-stat-div"></div>
+            <div class="ob-stat">
+              <div class="ob-stat-num">5</div>
+              <div class="ob-stat-label">Workflows</div>
+            </div>
+            <div class="ob-stat-div"></div>
+            <div class="ob-stat">
+              <div class="ob-stat-num">3×</div>
+              <div class="ob-stat-label">Parallel speedup</div>
+            </div>
+            <div class="ob-stat-div"></div>
+            <div class="ob-stat">
+              <div class="ob-stat-num">0</div>
+              <div class="ob-stat-label">New subscriptions</div>
+            </div>
+          </div>
+
           <div class="ob-divider"></div>
+
+          <!-- Quickstart -->
+          <div class="ob-qs-label">Dispatch your first task</div>
           <div class="ob-steps">
             <div class="ob-step">
-              <span class="ob-num">1</span>
+              <div class="ob-step-left">
+                <span class="ob-num">1</span>
+                <div class="ob-step-line"></div>
+              </div>
               <div class="ob-step-body">
-                <div class="ob-step-title">Start the server</div>
-                <code class="ob-code">go run main.go</code>
+                <div class="ob-step-title">Start Anton in your project</div>
+                <code class="ob-code">anton</code>
               </div>
             </div>
             <div class="ob-step">
-              <span class="ob-num">2</span>
+              <div class="ob-step-left">
+                <span class="ob-num">2</span>
+                <div class="ob-step-line"></div>
+              </div>
               <div class="ob-step-body">
-                <div class="ob-step-title">Dispatch from Claude Code</div>
-                <code class="ob-code">/team-dispatch build JWT auth</code>
+                <div class="ob-step-title">Open Claude Code, dispatch a task</div>
+                <code class="ob-code">/team-dispatch <span class="ob-code-dim">your task in plain English</span></code>
               </div>
             </div>
             <div class="ob-step">
-              <span class="ob-num">3</span>
+              <div class="ob-step-left">
+                <span class="ob-num">3</span>
+              </div>
               <div class="ob-step-body">
-                <div class="ob-step-title">Watch your team work live</div>
-                <code class="ob-code">← agents appear here in real time</code>
+                <div class="ob-step-title">Watch 11 specialists work — inspect deliverables</div>
+                <div class="ob-step-hint">Live DAG appears here as agents execute ↑</div>
               </div>
             </div>
           </div>
+
+          <!-- Footer -->
           <div class="ob-footer">
-            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener">GitHub ↗</a>
+            <a class="ob-link ob-link-gh" href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              GitHub
+            </a>
             <span class="ob-sep">·</span>
-            <span class="ob-version">Beta</span>
+            <a class="ob-link" href="https://github.com/kabirnarang39/claude-team/blob/main/docs/examples/" target="_blank" rel="noopener">Examples ↗</a>
+            <span class="ob-sep">·</span>
+            <span class="ob-version">v2 Beta</span>
           </div>
+
         </div>
       </div>
 
@@ -142,8 +233,9 @@
 
       <!-- Inspector tab bar -->
       <div class="inspector-tabs">
-        <button class="itab active" id="itab-btn-agent" onclick="switchInspectorTab('agent')">Agent</button>
-        <button class="itab" id="itab-btn-docs" onclick="switchInspectorTab('docs')">Docs</button>
+        <button class="itab active" id="itab-btn-agent" onclick="switchInspectorTab('agent',true)">Agent</button>
+        <button class="itab" id="itab-btn-docs" onclick="switchInspectorTab('docs',true)">Docs</button>
+        <button class="itab" id="itab-btn-deliverables" onclick="switchInspectorTab('deliverables',true)">Deliverables</button>
       </div>
 
       <!-- Agent tab -->
@@ -182,6 +274,15 @@
         <div class="doc-phase-tabs" id="doc-phase-tabs" style="display:none"></div>
         <!-- Doc content area (JS populates) -->
         <div class="doc-viewer" id="doc-viewer"></div>
+      </div>
+
+      <!-- Deliverables tab -->
+      <div class="itab-panel" id="itab-deliverables" style="display:none;flex-direction:column;gap:0;overflow-y:auto">
+        <div class="inspector-empty" id="deliverables-empty">
+          <div class="ie-icon">⊡</div>
+          <div class="ie-hint">Agent output files appear here as phases complete</div>
+        </div>
+        <div id="deliverables-list" style="display:none;padding:10px;flex-direction:column;gap:8px"></div>
       </div>
 
     </aside>

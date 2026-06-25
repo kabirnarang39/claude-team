@@ -10,16 +10,16 @@
 
 | # | Category | Status | Notes |
 |---|----------|--------|-------|
-| A01 | Broken Access Control | ✅ Pass | JWT claims include role, middleware enforces per-route |
-| A02 | Cryptographic Failures | ✅ Pass | RS256 (asymmetric), bcrypt cost 12, no secrets in logs |
-| A03 | Injection | ✅ Pass | Parameterised queries throughout, no raw SQL |
-| A04 | Insecure Design | ⚠️ Note | Refresh token rotation correct; ensure concurrent refresh race is handled |
-| A05 | Security Misconfiguration | ✅ Pass | CORS restricted, no debug endpoints in production config |
-| A06 | Vulnerable Components | ✅ Pass | Dependencies audited, no known CVEs |
-| A07 | Auth Failures | ✅ Pass | Rate limiting, account lockout not implemented (see findings) |
-| A08 | Software & Data Integrity | ✅ Pass | Token signature verified on every request |
-| A09 | Logging Failures | ✅ Pass | Auth events logged with IP, UA, timestamp |
-| A10 | SSRF | ✅ Pass | No outbound requests triggered by user input |
+| A01 | Broken Access Control | PASS Pass | JWT claims include role, middleware enforces per-route |
+| A02 | Cryptographic Failures | PASS Pass | RS256 (asymmetric), bcrypt cost 12, no secrets in logs |
+| A03 | Injection | PASS Pass | Parameterised queries throughout, no raw SQL |
+| A04 | Insecure Design | WARN Note | Refresh token rotation correct; ensure concurrent refresh race is handled |
+| A05 | Security Misconfiguration | PASS Pass | CORS restricted, no debug endpoints in production config |
+| A06 | Vulnerable Components | PASS Pass | Dependencies audited, no known CVEs |
+| A07 | Auth Failures | PASS Pass | Rate limiting, account lockout not implemented (see findings) |
+| A08 | Software & Data Integrity | PASS Pass | Token signature verified on every request |
+| A09 | Logging Failures | PASS Pass | Auth events logged with IP, UA, timestamp |
+| A10 | SSRF | PASS Pass | No outbound requests triggered by user input |
 
 ---
 
@@ -53,13 +53,13 @@ If key rotation is implemented later, the `kid` header in the JWT must be valida
 
 ## Passed Checks
 
-- ✅ Passwords never logged or returned in responses
-- ✅ Refresh tokens are opaque random bytes, not JWTs (not reversible)
-- ✅ `Set-Cookie` with `HttpOnly; Secure; SameSite=Strict` if cookie transport is used
-- ✅ `Authorization` header accepted only (`Bearer` scheme)
-- ✅ Token expiry validated both by signature and `exp` claim
-- ✅ No email enumeration — register and login return generic errors
-- ✅ Password reset tokens are single-use, 1 hour TTL, hashed in database
+- PASS Passwords never logged or returned in responses
+- PASS Refresh tokens are opaque random bytes, not JWTs (not reversible)
+- PASS `Set-Cookie` with `HttpOnly; Secure; SameSite=Strict` if cookie transport is used
+- PASS `Authorization` header accepted only (`Bearer` scheme)
+- PASS Token expiry validated both by signature and `exp` claim
+- PASS No email enumeration — register and login return generic errors
+- PASS Password reset tokens are single-use, 1 hour TTL, hashed in database
 
 ---
 

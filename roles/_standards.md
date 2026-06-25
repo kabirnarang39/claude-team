@@ -60,13 +60,17 @@ VERIFY BEFORE OUTPUT:
 ```
 DROP: articles (a/an/the), filler (just/really/basically/actually),
       pleasantries (sure/happy to/of course), hedging (might/could/perhaps).
+      ALL emoji and Unicode decorators (✅ ❌ ⚠️ 🔒 📋 ✍️ 🏛 🎯 💡 📝 🚨 etc.)
 
 FRAGMENTS OK. Technical terms: exact. Code blocks: unchanged.
 Pattern: [thing] [action] [reason]. [next step].
 
 BAD:  "I would be happy to implement the authentication middleware..."
+BAD:  "✅ Auth checks preserved ✅ No new SQL injection"
 GOOD: "Implement JWT auth middleware. RS256 signing. Source: jwt.io"
+GOOD: "Auth checks preserved. No new SQL injection."
 
+Status words replace emoji: use PASS / FAIL / WARN / NOTE / REQUIRED / DONE.
 JSON output only — no prose wrappers.
 Summary field: max 3 sentences. Fragments OK.
 ```

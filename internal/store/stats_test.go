@@ -24,11 +24,12 @@ func TestGetStats_empty(t *testing.T) {
 	if stats.ContextIsolationMult != 1.0 {
 		t.Errorf("context_isolation_multiplier: want 1.0, got %f", stats.ContextIsolationMult)
 	}
-	if stats.CavemanCompressionPct != 1 {
-		t.Errorf("caveman_compression_pct: want 1, got %d", stats.CavemanCompressionPct)
+	if stats.ContextSavingsPct != 0 {
+		t.Errorf("context_savings_pct: want 0 (no data), got %d", stats.ContextSavingsPct)
 	}
-	if stats.ParallelismSpeedup != 3.0 {
-		t.Errorf("parallelism_speedup: want 3.0, got %f", stats.ParallelismSpeedup)
+	// No agent_results → falls back to 1.0
+	if stats.ParallelismSpeedup != 1.0 {
+		t.Errorf("parallelism_speedup: want 1.0 (no data), got %f", stats.ParallelismSpeedup)
 	}
 	if stats.AvgAgentsPerRun != 0.0 {
 		t.Errorf("avg_agents_per_run: want 0.0, got %f", stats.AvgAgentsPerRun)
@@ -74,5 +75,9 @@ func TestGetStats_withData(t *testing.T) {
 	// (N+1)/2 = (2+1)/2 = 1.5
 	if stats.ContextIsolationMult != 1.5 {
 		t.Errorf("context_isolation_multiplier: want 1.5, got %f", stats.ContextIsolationMult)
+	}
+	// 2 agents in 1 phase → speedup = 2/1 = 2.0
+	if stats.ParallelismSpeedup != 2.0 {
+		t.Errorf("parallelism_speedup: want 2.0, got %f", stats.ParallelismSpeedup)
 	}
 }
