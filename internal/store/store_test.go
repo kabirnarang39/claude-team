@@ -381,8 +381,8 @@ func TestUpsertAgentResultStatusBranches(t *testing.T) {
 	}
 
 	cases := []struct {
-		status      string
-		wantPhase   string
+		status    string
+		wantPhase string
 	}{
 		{"DONE", "done"},
 		{"DONE_WITH_CONCERNS", "done"},
