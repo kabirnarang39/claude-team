@@ -9,9 +9,11 @@ One slash command. They work in parallel. You watch them live in your browser.
 ```
 
 [![CI](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml/badge.svg)](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml)
-[![Go 1.22+](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev)
+[![Go 1.25+](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/kabirnarang39/claude-team)](https://github.com/kabirnarang39/claude-team/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kabirnarang39/claude-team)](https://goreportcard.com/report/github.com/kabirnarang39/claude-team)
+[![codecov](https://codecov.io/gh/kabirnarang39/claude-team/branch/main/graph/badge.svg)](https://codecov.io/gh/kabirnarang39/claude-team)
 
 ![Parallelism](https://img.shields.io/badge/parallelism-3×_on_parallel_phases-blue)
 ![Context isolation](https://img.shields.io/badge/context_isolation-fresh_per_agent-purple)
@@ -27,8 +29,6 @@ One slash command. They work in parallel. You watch them live in your browser.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
 ```
-
-> **Homebrew tap coming soon** — star the repo to be notified when `brew install kabirnarang39/tap/anton` lands.
 
 ## Quick Start
 
@@ -160,17 +160,17 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 
 ### Anton vs. other multi-agent frameworks
 
-| | Anton | CrewAI | AutoGen | MetaGPT |
-|--|-------|--------|---------|---------|
-| Runs inside Claude Code | ✅ | ❌ | ❌ | ❌ |
-| Uses your Claude Code subscription | ✅ | ❌ | ❌ | ❌ |
-| No Python, no venv, no LangChain | ✅ | ❌ | ❌ | ❌ |
-| Live browser dashboard | ✅ | ❌ | ❌ | ❌ |
-| Workflows in plain YAML | ✅ | ⚠️ code | ⚠️ code | ⚠️ code |
-| Agent roles in plain Markdown | ✅ | ⚠️ code | ⚠️ code | ⚠️ code |
-| SQLite state (survives restarts) | ✅ | ❌ | ❌ | ❌ |
-| Local / offline-first | ✅ | ✅ | ✅ | ✅ |
-| Open source | ✅ | ✅ | ✅ | ✅ |
+| | Anton | Claude Squad | CrewAI | AutoGen | MetaGPT |
+|--|-------|-------------|--------|---------|---------|
+| Runs inside Claude Code | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Uses your Claude Code subscription | ✅ | ✅ | ❌ | ❌ | ❌ |
+| No Python, no venv, no LangChain | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Live browser dashboard | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Workflows in plain YAML | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
+| Agent roles in plain Markdown | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
+| SQLite state (survives restarts) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Local / offline-first | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Open source | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### Anton vs. Devin / Copilot Workspace
 
@@ -274,7 +274,7 @@ Usage of anton:
 
 - [Claude Code](https://claude.ai/download) — active subscription
 - Node.js 20+
-- Go 1.22+ (build from source only)
+- Go 1.25+ (build from source only)
 
 > **Platform support:** macOS arm64/amd64, Linux amd64. Linux arm64 (Graviton, Raspberry Pi) not yet supported — [upvote the issue](https://github.com/kabirnarang39/claude-team/issues).
 
