@@ -418,11 +418,26 @@ func (s *Server) handleRunFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type FileEntry struct {
+		Name  string `json:"name"`
+		Size  int64  `json:"size"`
+		Mtime int64  `json:"mtime"`
+		Ext   string `json:"ext"`
+		Agent string `json:"agent"`
+		Phase string `json:"phase"`
+	}
+
 	runDir := filepath.Join(s.cfg.RuntimeDir, "runs", runID)
+	absRunDir, err := filepath.Abs(runDir)
+	if err != nil || !strings.HasPrefix(absRunDir, filepath.Clean(s.cfg.RuntimeDir)+string(filepath.Separator)) {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
+
 	entries, err := os.ReadDir(runDir)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]any{})
+		json.NewEncoder(w).Encode([]FileEntry{})
 		return
 	}
 
@@ -436,15 +451,6 @@ func (s *Server) handleRunFiles(w http.ResponseWriter, r *http.Request) {
 	skip := map[string]bool{
 		"checkpoint.json": true,
 		"pending-task.md": true,
-	}
-
-	type FileEntry struct {
-		Name  string `json:"name"`
-		Size  int64  `json:"size"`
-		Mtime int64  `json:"mtime"`
-		Ext   string `json:"ext"`
-		Agent string `json:"agent"`
-		Phase string `json:"phase"`
 	}
 
 	result := []FileEntry{}
