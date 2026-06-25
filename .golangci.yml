@@ -10,11 +10,14 @@ linters:
     - ineffassign
     - staticcheck
     - deadcode
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - unparam
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
 
 issues:
   exclude-rules:
