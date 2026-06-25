@@ -49,6 +49,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/runs/{id}", s.handleRunDetail)
 	mux.HandleFunc("GET /api/runs/{id}/files", s.handleRunFiles)
 	mux.HandleFunc("GET /api/runs/{id}/files/{filename}", s.handleRunFile)
+	mux.HandleFunc("GET /api/runs/{id}/files/{filename}/raw", s.handleRunFileRaw)
 	mux.HandleFunc("POST /api/workflow/upload", s.handleWorkflowUpload)
 	mux.HandleFunc("GET /api/workflow/active", s.handleWorkflowActive)
 	mux.HandleFunc("PUT /api/workflow/active", s.handleWorkflowSetActive)

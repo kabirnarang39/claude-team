@@ -24,3 +24,20 @@ Optional (user-enabled): github, notion, google-drive
 ## Output
 
 - `prd.md`: Product Requirements Document in standard format
+
+## Output Destination
+
+Read `Output destination:` from your brief.
+
+**If "local MD only":** Write `prd.md` to `.claude-team/runs/<run_id>/prd.md` only.
+
+**If "Confluence" or "both":**
+1. Write `prd.md` locally first (always — fallback)
+2. Create or update Confluence page via Atlassian Rovo MCP:
+   - Tool: `createConfluencePage` (new page) or `updateConfluencePage` (if page exists)
+   - Space: `<confluence_space from brief>`
+   - Title: `PRD: <task title>`
+   - Content: contents of prd.md converted to Confluence storage format
+3. If Confluence MCP unavailable or call fails: log warning in report, continue with local MD only. Do NOT report BLOCKED.
+
+**Word/DOCX:** Not supported. If brief requests Word output, write to Confluence + local MD and note in report.

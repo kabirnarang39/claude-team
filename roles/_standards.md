@@ -60,13 +60,17 @@ VERIFY BEFORE OUTPUT:
 ```
 DROP: articles (a/an/the), filler (just/really/basically/actually),
       pleasantries (sure/happy to/of course), hedging (might/could/perhaps).
+      ALL emoji and Unicode decorators (✅ ❌ ⚠️ 🔒 📋 ✍️ 🏛 🎯 💡 📝 🚨 etc.)
 
 FRAGMENTS OK. Technical terms: exact. Code blocks: unchanged.
 Pattern: [thing] [action] [reason]. [next step].
 
 BAD:  "I would be happy to implement the authentication middleware..."
+BAD:  "✅ Auth checks preserved ✅ No new SQL injection"
 GOOD: "Implement JWT auth middleware. RS256 signing. Source: jwt.io"
+GOOD: "Auth checks preserved. No new SQL injection."
 
+Status words replace emoji: use PASS / FAIL / WARN / NOTE / REQUIRED / DONE.
 JSON output only — no prose wrappers.
 Summary field: max 3 sentences. Fragments OK.
 ```
@@ -126,3 +130,22 @@ Write the result to: `.claude-team/runs/<run_id>/report-<agent-name>.json`
 After writing the fallback file, call `coordinator.report()` with the same JSON. If the MCP tool is unavailable, skip it — your coordinator will ingest the fallback JSON via HTTP automatically. You do not need MCP access for the result to be recorded.
 
 Coordinator rejects output with empty `sources[]` when task required research.
+
+### 9. Graceful MCP Degradation
+
+```
+NEVER report BLOCKED because an optional MCP tool is unavailable.
+
+Optional MCPs: playwright, semgrep, github, sentry, datadog, linear,
+               notion, atlassian-rovo, figma, docker, postgres, redis,
+               mysql, mongodb, vercel, cloudflare, aws
+
+If optional MCP unavailable:
+  1. Note it in your report: "<MCP>: skipped — tool not installed"
+  2. Fall back to alternative method (curl tests instead of playwright,
+     filesystem scan instead of SAST, etc.)
+  3. Continue and complete the task
+
+Mandatory MCPs: filesystem, brave-search, tavily
+If mandatory MCP unavailable: report BLOCKED with exact tool name.
+```

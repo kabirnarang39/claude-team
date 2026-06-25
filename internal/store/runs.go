@@ -324,6 +324,42 @@ func (s *Store) UpsertAgentResult(r AgentResult) error {
 	return s.UpsertPhase(r.RunID, r.PhaseID, phaseStatus)
 }
 
+// GetDeliverableIndex returns a map of filename → [agent, phase_id] for all
+// agent results in the given run. Files not present in any deliverables list
+// are absent from the map.
+func (s *Store) GetDeliverableIndex(runID string) (map[string][2]string, error) {
+	rows, err := s.db.Query(`
+		SELECT agent, phase_id, deliverables_json
+		FROM agent_results
+		WHERE run_id = ?
+		  AND id IN (
+		      SELECT MAX(id) FROM agent_results
+		      WHERE run_id = ?
+		      GROUP BY phase_id, agent
+		  )
+	`, runID, runID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	index := make(map[string][2]string)
+	for rows.Next() {
+		var agent, phaseID, delivJSON string
+		if err := rows.Scan(&agent, &phaseID, &delivJSON); err != nil {
+			continue
+		}
+		var deliverables []string
+		json.Unmarshal([]byte(delivJSON), &deliverables)
+		for _, d := range deliverables {
+			// Normalise: strip any leading path components
+			base := filepath.Base(d)
+			index[base] = [2]string{agent, phaseID}
+		}
+	}
+	return index, rows.Err()
+}
+
 func (s *Store) WriteTask(runtimeDir, text string) error {
 	content := "# Pending Task\n\n" + text + "\n"
 	return os.WriteFile(filepath.Join(runtimeDir, "pending-task.md"), []byte(content), 0644)

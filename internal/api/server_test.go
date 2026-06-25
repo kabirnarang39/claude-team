@@ -147,6 +147,66 @@ func TestGetSettingsEndpoint(t *testing.T) {
 	}
 }
 
+func TestHandleRunFilesRich(t *testing.T) {
+	dir := t.TempDir()
+	runID := "test-run-001"
+	runDir := filepath.Join(dir, "runs", runID)
+	if err := os.MkdirAll(runDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(runDir, "prd.md"), []byte("# PRD\ncontent"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	dbPath := filepath.Join(dir, "state.db")
+	st, err := store.Open(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	hub := api.NewHub()
+	srv := api.NewServer(api.Config{
+		Hub:        hub,
+		UIFS:       fstest.MapFS{},
+		Store:      st,
+		RuntimeDir: dir,
+	})
+
+	req := httptest.NewRequest("GET", "/api/runs/test-run-001/files", nil)
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("got %d, want 200", rec.Code)
+	}
+
+	type FileEntry struct {
+		Name  string `json:"name"`
+		Size  int64  `json:"size"`
+		Mtime int64  `json:"mtime"`
+		Ext   string `json:"ext"`
+		Agent string `json:"agent"`
+		Phase string `json:"phase"`
+	}
+	var entries []FileEntry
+	if err := json.NewDecoder(rec.Body).Decode(&entries); err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("want 1 entry, got %d", len(entries))
+	}
+	if entries[0].Name != "prd.md" {
+		t.Errorf("want name prd.md, got %q", entries[0].Name)
+	}
+	if entries[0].Ext != "md" {
+		t.Errorf("want ext md, got %q", entries[0].Ext)
+	}
+	if entries[0].Size != int64(len("# PRD\ncontent")) {
+		t.Errorf("want size %d, got %d", len("# PRD\ncontent"), entries[0].Size)
+	}
+}
+
 func TestSaveSettingsEndpoint(t *testing.T) {
 	hub := api.NewHub()
 	var saved map[string]string
@@ -285,9 +345,17 @@ func TestRunFilesEndpoints(t *testing.T) {
 		if w.Code != 200 {
 			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body)
 		}
-		var files []string
+		type FileEntry struct {
+			Name  string `json:"name"`
+			Size  int64  `json:"size"`
+			Mtime int64  `json:"mtime"`
+			Ext   string `json:"ext"`
+			Agent string `json:"agent"`
+			Phase string `json:"phase"`
+		}
+		var files []FileEntry
 		json.NewDecoder(w.Body).Decode(&files)
-		if len(files) != 1 || files[0] != "adr.md" {
+		if len(files) != 1 || files[0].Name != "adr.md" {
 			t.Errorf("expected [adr.md], got %v", files)
 		}
 	})
@@ -482,8 +550,8 @@ func TestHandleStats_empty(t *testing.T) {
 	if body["runs_total"] != float64(0) {
 		t.Errorf("runs_total: want 0, got %v", body["runs_total"])
 	}
-	if body["caveman_compression_pct"] != float64(1) {
-		t.Errorf("caveman_compression_pct: want 1, got %v", body["caveman_compression_pct"])
+	if body["context_savings_pct"] != float64(0) {
+		t.Errorf("context_savings_pct: want 0, got %v", body["context_savings_pct"])
 	}
 }
 

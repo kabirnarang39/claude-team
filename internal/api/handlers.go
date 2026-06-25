@@ -417,21 +417,65 @@ func (s *Server) handleRunFiles(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not configured", 500)
 		return
 	}
+
+	type FileEntry struct {
+		Name  string `json:"name"`
+		Size  int64  `json:"size"`
+		Mtime int64  `json:"mtime"`
+		Ext   string `json:"ext"`
+		Agent string `json:"agent"`
+		Phase string `json:"phase"`
+	}
+
 	runDir := filepath.Join(s.cfg.RuntimeDir, "runs", runID)
+	absRunDir, err := filepath.Abs(runDir)
+	if err != nil || !strings.HasPrefix(absRunDir, filepath.Clean(s.cfg.RuntimeDir)+string(filepath.Separator)) {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
+
 	entries, err := os.ReadDir(runDir)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]string{})
+		json.NewEncoder(w).Encode([]FileEntry{})
 		return
 	}
-	names := []string{}
-	for _, e := range entries {
-		if !e.IsDir() {
-			names = append(names, e.Name())
-		}
+
+	// Build attribution index from agent_results (best-effort — nil store is OK)
+	index := map[string][2]string{}
+	if s.cfg.Store != nil {
+		index, _ = s.cfg.Store.GetDeliverableIndex(runID)
 	}
+
+	// Files to skip from the deliverables list
+	skip := map[string]bool{
+		"checkpoint.json": true,
+		"pending-task.md": true,
+	}
+
+	result := []FileEntry{}
+	for _, e := range entries {
+		if e.IsDir() || skip[e.Name()] {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		ext := strings.TrimPrefix(filepath.Ext(e.Name()), ".")
+		attr := index[e.Name()]
+		result = append(result, FileEntry{
+			Name:  e.Name(),
+			Size:  info.Size(),
+			Mtime: info.ModTime().Unix(),
+			Ext:   ext,
+			Agent: attr[0],
+			Phase: attr[1],
+		})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(names)
+	json.NewEncoder(w).Encode(result)
 }
 
 func (s *Server) handleRunFile(w http.ResponseWriter, r *http.Request) {
@@ -460,6 +504,46 @@ func (s *Server) handleRunFile(w http.ResponseWriter, r *http.Request) {
 		"name":    filename,
 		"content": string(data),
 	})
+}
+
+func (s *Server) handleRunFileRaw(w http.ResponseWriter, r *http.Request) {
+	runID := r.PathValue("id")
+	filename := r.PathValue("filename")
+	if strings.Contains(runID, "..") || strings.Contains(runID, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") {
+		http.Error(w, "invalid filename", 400)
+		return
+	}
+	if s.cfg.RuntimeDir == "" {
+		http.Error(w, "not configured", 500)
+		return
+	}
+	path := filepath.Join(s.cfg.RuntimeDir, "runs", runID, filepath.Base(filename))
+	data, err := os.ReadFile(path)
+	if err != nil {
+		http.Error(w, "file not found", 404)
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(filename))
+	ct := map[string]string{
+		".html": "text/html; charset=utf-8",
+		".svg":  "image/svg+xml",
+		".png":  "image/png",
+		".jpg":  "image/jpeg",
+		".jpeg": "image/jpeg",
+		".gif":  "image/gif",
+		".webp": "image/webp",
+		".md":   "text/plain; charset=utf-8",
+	}[ext]
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	w.Header().Set("Content-Type", ct)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Write(data)
 }
 
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {

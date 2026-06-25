@@ -1,0 +1,93 @@
+# Anton PR Review via GitHub Actions
+#
+# Runs Anton's code-review workflow on every pull request.
+# Posts a summary comment with architecture, security, and quality findings.
+#
+# Requirements:
+#   - ANTHROPIC_API_KEY secret set in repo settings
+#   - Anton installed: curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
+#
+# Usage: copy to .github/workflows/anton-review.yml in your repo
+
+name: Anton Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    name: Anton — specialist review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for diff context
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Anton
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Start Anton server
+        run: anton &
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 10); do
+            curl -sf http://localhost:3000/api/stats && break
+            sleep 2
+          done
+
+      - name: Dispatch code-review workflow
+        id: review
+        run: |
+          PR_DIFF=$(gh pr diff ${{ github.event.pull_request.number }})
+          TASK="Review PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          # Dispatch via Anton API (non-interactive mode)
+          RUN_ID=$(curl -sf -X POST http://localhost:3000/api/runs \
+            -H 'Content-Type: application/json' \
+            -d "{\"workflow\": \"code-review\", \"task\": \"$TASK\"}" \
+            | jq -r '.id')
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+
+          # Wait for completion (max 10 min)
+          for i in $(seq 1 60); do
+            STATUS=$(curl -sf "http://localhost:3000/api/runs/$RUN_ID" | jq -r '.status')
+            [ "$STATUS" = "done" ] && break
+            [ "$STATUS" = "blocked" ] && { echo "Run blocked"; exit 1; }
+            sleep 10
+          done
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post review comment
+        run: |
+          RUN_ID="${{ steps.review.outputs.run_id }}"
+          # Fetch verdicts from Anton
+          RESULTS=$(curl -sf "http://localhost:3000/api/runs/$RUN_ID")
+          VERDICT=$(echo "$RESULTS" | jq -r '
+            .results[] |
+            "**\(.agent)** (\(.phase)): \(.summary | split(".")[0])."
+          ' | head -10)
+
+          gh pr comment ${{ github.event.pull_request.number }} --body "## ⚡ Anton Code Review
+
+          $VERDICT
+
+          [Full report](http://localhost:3000) — run \`anton\` locally to view the live DAG.
+
+          *Reviewed by: senior-architect · security-reviewer · code-reviewer*"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
