@@ -71,6 +71,54 @@ Every agent's reasoning is visible in real time. The live DAG shows all phases a
 
 All outputs land in `.claude-team/runs/<run_id>/` as plain Markdown files — yours to read, edit, and version-control.
 
+Each agent has a unique persona — pixel art characters (Ragnar the backend engineer, Jon Snow the security reviewer, Floki the devops engineer) so you can track who's doing what at a glance.
+
+## 🧠 Cost-Smart Model Routing
+
+Anton picks the cheapest model that can handle each job — you don't pay opus prices for boilerplate.
+
+| Tier | Model | Assigned to |
+|------|-------|-------------|
+| Haiku | `claude-haiku-4-5` | tech-writer, boilerplate generation, file formatting |
+| Sonnet | `claude-sonnet-4-6` | backend-engineer, frontend-engineer, dba, qa-engineer, devops-engineer |
+| Opus | `claude-opus-4-8` | senior-architect, security-reviewer, code-reviewer, debugger, incident triage |
+
+If a Sonnet-tier agent returns `DONE_WITH_CONCERNS` or `BLOCKED`, Anton automatically re-dispatches on Opus before surfacing to you.
+
+Token usage per agent is tracked in SQLite and shown in the inspector panel.
+
+## 🔍 Human Review Gates
+
+Anton pauses twice in the `feature-build` workflow and shows you what it produced before continuing.
+
+**Gate 1 — Plan Review** (after planning, before architecture)
+
+Anton prints the full PRD and waits:
+```
+── PLAN REVIEW ──────────────────────────────────────────
+Review the PRD above before architecture design begins.
+
+Type  approved              to proceed.
+Type  rejected: <feedback>  to redo planning with your feedback.
+─────────────────────────────────────────────────────────
+```
+
+**Gate 2 — Task Review** (after architecture, before engineering)
+
+Anton prints the ADR and OpenAPI spec and waits for the same prompt. Reject with feedback → re-runs the phase with your notes appended. Loop until approved.
+
+Both gates write to the dashboard and SQLite so review state survives restarts.
+
+## ⏸ Resume Interrupted Runs
+
+Anton checkpoints after every phase. If your session crashes or you close Claude Code mid-run:
+
+```bash
+/team-resume
+```
+
+Anton reads `.claude-team/runs/<run_id>/checkpoint.json`, skips completed phases, and resumes from where it stopped — including partially-completed phases (only runs agents not already finished).
+
 ## 🧩 Simplicity — Nothing new to install
 
 | What you need | What you don't need |
@@ -157,6 +205,10 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Response verbosity | removes filler vocabulary from agent responses | baseline |
 | Specialists per task | 7–12 | 1 |
 | Context isolation | each sub-agent sees only its role | shared, polluted context |
+| Human review gates | plan + architecture approval before engineers start | none |
+| Resume on crash | checkpoint per phase, `/team-resume` to continue | start over |
+| Tool integrations | 25 MCPs — Jira, Slack, GitHub, Postgres, Sentry… | whatever's in your session |
+| Model cost routing | haiku → sonnet → opus by task complexity | 1 model for everything |
 
 > **Context isolation math:** In a solo 10-agent session, context grows as `N(N+1)/2` turns of history. Anton sub-agents each start fresh — `5.5×` less context overhead at 10 agents.
 
@@ -171,6 +223,10 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Workflows in plain YAML | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
 | Agent roles in plain Markdown | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
 | SQLite state (survives restarts) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Human review gates | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Run checkpoint + resume | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 25 built-in MCP integrations | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Cost-smart model routing | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Local / offline-first | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Open source | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -210,6 +266,89 @@ You → /team-dispatch → Main Coordinator (your Claude Code session)
 3. **Each agent** reads its role prompt, does its work, and reports via the MCP tool.
 4. **Anton's Go server** writes results to SQLite and streams updates over WebSocket.
 5. **The dashboard** shows live progress — click any agent node to open the inspector (output · docs · deliverables).
+
+---
+
+## 🔌 Integrations
+
+Anton auto-registers tools from `mcp-registry.yaml` at startup. Agents use them during their phase — no extra config beyond setting the env var for the tools you want.
+
+### Project Management
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Jira / Confluence** (Atlassian Rovo) | Coordinator reads linked tickets and Confluence specs before dispatch; tech-writer can write PRDs to Confluence | *(browser auth — no token needed)* |
+| **Linear** | Coordinator reads issue details, acceptance criteria, and linked specs | `LINEAR_API_KEY` |
+| **Notion** | Read/write pages and databases | `NOTION_TOKEN` |
+| **ClickUp** | Read tasks and goals | `CLICKUP_TOKEN` |
+
+### Version Control
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **GitHub** | Read open issues, search code, check CI status during engineering phase | `GITHUB_TOKEN` |
+| **GitLab** | Read MRs and pipelines | `GITLAB_TOKEN` |
+
+### Design
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Figma** | Frontend engineer reads component specs and design tokens | `FIGMA_TOKEN` |
+
+### Databases
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **PostgreSQL** | DBA reads live schema before designing migrations | `DATABASE_URL` |
+| **MySQL / MariaDB** | Same as Postgres | `MYSQL_URL` |
+| **MongoDB** | DBA reads collections and aggregation patterns | `MONGODB_URI` |
+| **Redis** | Backend engineer reads key patterns and TTL strategy | `REDIS_URL` |
+| **Supabase** | DB + auth + storage + edge functions | `SUPABASE_URL`, `SUPABASE_KEY` |
+| **SQLite** | Read local database files | `SQLITE_PATH` |
+
+### Cloud & Deploy
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Vercel** | DevOps reads deployment config, env vars, domains | `VERCEL_TOKEN` |
+| **Cloudflare** | DevOps reads Workers, KV, D1, R2, DNS | `CLOUDFLARE_TOKEN` |
+| **AWS** | DevOps reads S3, Lambda, EC2, CloudFormation | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
+
+### Testing & Browser
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Playwright** | E2E tester runs browser automation and screenshots | *(no token)* |
+
+### Observability
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Sentry** | Security reviewer and debugger read error traces | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` |
+| **Datadog** | Incident response reads metrics, logs, traces, monitors | `DD_API_KEY`, `DD_APP_KEY` |
+
+### Files & Search
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Filesystem** | All agents read project files — always active | *(no token)* |
+| **Google Drive** | Tech writer reads Docs, Sheets, Slides | *(browser auth)* |
+| **Brave Search** | All agents search docs and CVEs before stating facts | `BRAVE_API_KEY` |
+| **Tavily** | AI-optimised search for RAG and doc lookup | `TAVILY_API_KEY` |
+
+### Communication
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Slack** | DevOps posts phase summaries to channels | `SLACK_BOT_TOKEN` |
+
+### Containers
+
+| Integration | What agents use it for | Env var |
+|------------|----------------------|---------|
+| **Docker** | DevOps manages containers and images | *(no token)* |
+
+Set env vars before running `anton`. MCPs with missing env vars are skipped silently — the rest still work. To use a custom registry path: `anton -registry /path/to/mcp-registry.yaml`.
 
 ---
 
@@ -259,16 +398,25 @@ Each role is a Markdown system prompt in `roles/`. To add a specialist:
 ```
 Usage of anton:
   -check
-        Check Anton setup and exit
+        Verify Claude Code, Node.js, and MCP setup — exit with pass/fail report
   -demo
-        Pre-populate dashboard with a sample completed run
+        Pre-populate dashboard with a sample completed run (no Claude Code needed — great for previewing the UI)
   -port int
         HTTP port (default 3000)
   -registry string
-        Path to mcp-registry.yaml (default "mcp-registry.yaml")
+        Path to mcp-registry.yaml (default "mcp-registry.yaml") — use a custom file to enable/disable specific MCPs
   -version
         Print version and exit
 ```
+
+### Skills
+
+| Skill | Description |
+|-------|-------------|
+| `/team-dispatch <task>` | Dispatch a new run. Accepts `--workflow <name>` to pick a non-default workflow. |
+| `/team-status` | Print status of the latest run — phases, agents, confidence scores. |
+| `/team-resume` | Resume a run from checkpoint. Use after a crash or interrupted session. |
+| `/team-stop` | Stop the current run. |
 
 ---
 
