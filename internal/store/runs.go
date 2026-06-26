@@ -378,7 +378,7 @@ func (s *Store) CreateReview(runID, gate, summary string) error {
 func (s *Store) ResolveReview(runID, gate, status, feedback string) error {
 	_, err := s.db.Exec(
 		`UPDATE human_reviews SET status=?, feedback=?, resolved_at=?
-		 WHERE run_id=? AND gate=? AND status='pending'`,
+		 WHERE id = (SELECT id FROM human_reviews WHERE run_id=? AND gate=? AND status='pending' ORDER BY id ASC LIMIT 1)`,
 		status, feedback, time.Now().Unix(), runID, gate,
 	)
 	return err

@@ -149,3 +149,22 @@ If optional MCP unavailable:
 Mandatory MCPs: filesystem, brave-search, tavily
 If mandatory MCP unavailable: report BLOCKED with exact tool name.
 ```
+
+### 10. Test-Driven Development (engineering agents: backend-engineer, frontend-engineer, dba, devops-engineer)
+
+```
+MANDATORY ORDER:
+1. Write failing tests for each acceptance criterion FIRST.
+2. Implement to make tests pass.
+3. Run tests. Record result in tests_run: "<command>: X/Y passing".
+4. Do NOT report DONE if any test fails — fix or report BLOCKED.
+
+Test scope by role:
+  backend-engineer  → unit tests + integration tests (HTTP handlers, business logic)
+  frontend-engineer → component tests + E2E smoke (use playwright or curl fallback)
+  dba               → migration up/down round-trip test, schema constraint tests
+  devops-engineer   → CI config lint (act --dryrun or yamllint), container build test
+
+tests_run field is REQUIRED for DONE status.
+Empty tests_run on a DONE report → coordinator rejects and re-dispatches.
+```

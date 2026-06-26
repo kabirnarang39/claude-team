@@ -579,7 +579,7 @@ func (s *Server) handleSignalReview(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	if body.Gate != "plan-review" && body.Gate != "task-review" {
+	if body.Gate == "" || len(body.Gate) > 128 {
 		http.Error(w, "invalid gate", 400)
 		return
 	}
@@ -619,7 +619,7 @@ func (s *Server) handleResolveReview(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	if body.Gate != "plan-review" && body.Gate != "task-review" {
+	if body.Gate == "" || len(body.Gate) > 128 {
 		http.Error(w, "invalid gate", 400)
 		return
 	}

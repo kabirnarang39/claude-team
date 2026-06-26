@@ -221,6 +221,49 @@ func TestHumanReview(t *testing.T) {
 	}
 }
 
+func TestResolveReviewOneAtATime(t *testing.T) {
+	s := openTestStore(t)
+	runID, err := s.CreateRun("feature-build")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Two concurrent agents both raise agent-question for the same run.
+	if err := s.CreateReview(runID, "agent-question", "backend-engineer: which DB?"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CreateReview(runID, "agent-question", "frontend-engineer: which framework?"); err != nil {
+		t.Fatal(err)
+	}
+
+	// First resolve — must only resolve the oldest row (backend-engineer).
+	if err := s.ResolveReview(runID, "agent-question", "approved", "use postgres"); err != nil {
+		t.Fatal(err)
+	}
+
+	detail, err := s.GetRunDetail(runID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pending, resolved int
+	for _, r := range detail.Reviews {
+		if r.Gate != "agent-question" {
+			continue
+		}
+		if r.Status == "pending" {
+			pending++
+		} else {
+			resolved++
+		}
+	}
+	if resolved != 1 {
+		t.Errorf("expected 1 resolved, got %d", resolved)
+	}
+	if pending != 1 {
+		t.Errorf("expected 1 still pending, got %d", pending)
+	}
+}
+
 func TestGetAllStatuses(t *testing.T) {
 	s := openTestStore(t)
 	runID, err := s.CreateRun("feature-build")

@@ -92,6 +92,25 @@ if [ -f ".claude-team/runs/<run_id>/report-qa-engineer.json" ]; then
 fi
 ```
 
+### Step 4 — Human Question Gate (check BEFORE marking complete)
+
+Read the agent report. If `status == "BLOCKED"`, `questions[]` is non-empty, or there are hard FAIL findings:
+1. Signal dashboard:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"agent-question\",\"summary\":\"qa-engineer: <first question or FAIL, ≤200 chars>\"}"
+   ```
+2. Use `AskUserQuestion` tool with the question(s) from the report.
+3. Resolve:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"agent-question\",\"status\":\"approved\",\"feedback\":\"<user answer>\"}"
+   ```
+4. Re-dispatch qa-engineer with `Human answer: <answer>` appended to brief.
+5. Only proceed past this step when status is DONE or DONE_WITH_CONCERNS with no hard FAILs.
+
 ### After dispatch
 - Call `TaskUpdate`: `{ taskId: "<qa-engineer-task-id>", status: "completed" }`
 - Append `qa-engineer` to checkpoint:
@@ -141,15 +160,32 @@ Write fallback JSON to .claude-team/runs/<run_id>/report-security-reviewer.json
 Report via coordinator MCP `report` tool before exiting.
 ```
 
-### Step 3 — Check critical halt rule, then ingest
+### Step 3 — Ingest result
 ```bash
 if [ -f ".claude-team/runs/<run_id>/report-security-reviewer.json" ]; then
   curl -s -X POST http://localhost:3000/api/ingest-result \
     -H "Content-Type: application/json" \
     -d @.claude-team/runs/<run_id>/report-security-reviewer.json
 fi
-# Read the report and check for CRITICAL before dispatching e2e-tester
 ```
+
+### Step 4 — Human Question Gate
+
+Read the security-reviewer report. If `status == "BLOCKED"`, `questions[]` non-empty, OR summary contains "CRITICAL:":
+1. Signal dashboard:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"agent-question\",\"summary\":\"security-reviewer: <first finding or question, ≤200 chars>\"}"
+   ```
+2. Use `AskUserQuestion` tool — surface the finding/question to user.
+3. Resolve:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"agent-question\",\"status\":\"approved\",\"feedback\":\"<user answer>\"}"
+   ```
+4. If user says proceed despite finding: continue. If user says fix: re-dispatch security-reviewer with feedback appended.
 
 ### After dispatch (non-CRITICAL path)
 - Call `TaskUpdate`: `{ taskId: "<security-reviewer-task-id>", status: "completed" }`

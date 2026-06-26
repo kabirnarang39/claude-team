@@ -93,6 +93,14 @@ if [ -f ".claude-team/runs/<run_id>/report-senior-architect.json" ]; then
 fi
 ```
 
+### Step 4 — Human Question Gate
+
+Read the report. If `status == "BLOCKED"` or `questions[]` non-empty:
+1. `curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review -H "Content-Type: application/json" -d "{\"gate\":\"agent-question\",\"summary\":\"senior-architect: <first question, ≤200 chars>\"}"`
+2. Use `AskUserQuestion` tool with the question(s).
+3. `curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review -H "Content-Type: application/json" -d "{\"gate\":\"agent-question\",\"status\":\"approved\",\"feedback\":\"<answer>\"}"`
+4. Re-dispatch with `Human answer: <answer>` appended. Only proceed when DONE or DONE_WITH_CONCERNS.
+
 ### After dispatch
 - Call `TaskUpdate`: `{ taskId: "<senior-architect-task-id>", status: "completed" }`
 - Append `senior-architect` to checkpoint:
@@ -152,6 +160,14 @@ if [ -f ".claude-team/runs/<run_id>/report-api-designer.json" ]; then
     -d @.claude-team/runs/<run_id>/report-api-designer.json
 fi
 ```
+
+### Step 4 — Human Question Gate
+
+Read the report. If `status == "BLOCKED"` or `questions[]` non-empty:
+1. `curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review -H "Content-Type: application/json" -d "{\"gate\":\"agent-question\",\"summary\":\"api-designer: <first question, ≤200 chars>\"}"`
+2. Use `AskUserQuestion` tool with the question(s).
+3. `curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review -H "Content-Type: application/json" -d "{\"gate\":\"agent-question\",\"status\":\"approved\",\"feedback\":\"<answer>\"}"`
+4. Re-dispatch with `Human answer: <answer>` appended. Only proceed when DONE or DONE_WITH_CONCERNS.
 
 ### After dispatch
 - Call `TaskUpdate`: `{ taskId: "<api-designer-task-id>", status: "completed" }`

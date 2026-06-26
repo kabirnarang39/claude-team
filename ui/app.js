@@ -399,7 +399,13 @@ function renderReviewBanner() {
     container.innerHTML = ''
     return
   }
-  const label = pending.gate === 'plan-review' ? 'PLAN REVIEW' : 'TASK REVIEW'
+  const GATE_LABELS = {
+    'plan-review': 'PLAN REVIEW',
+    'task-review': 'TASK REVIEW',
+    'agent-question': 'AGENT QUESTION',
+    'qa-fail': 'QA FAILURE',
+  }
+  const label = GATE_LABELS[pending.gate] || pending.gate.toUpperCase().replace(/-/g, ' ')
   container.style.display = 'block'
   container.innerHTML = `
     <div class="review-banner">

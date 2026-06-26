@@ -627,14 +627,27 @@ func TestSignalReviewInvalidGate(t *testing.T) {
 	hub := api.NewHub()
 	srv := api.NewServer(api.Config{Hub: hub, UIFS: fstest.MapFS{}, Store: db})
 
-	body := `{"gate":"bad-gate","summary":"test"}`
-	req := httptest.NewRequest("POST", "/api/runs/"+runID+"/signal-review", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	srv.Handler().ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("got %d, want 400", rec.Code)
+	// Any non-empty gate name is now valid — gates are open-ended (agent-question, qa-fail, etc.)
+	// Only empty string or >128 chars should return 400.
+	cases := []struct {
+		gate string
+		want int
+	}{
+		{"", 400},
+		{strings.Repeat("x", 129), 400},
+		{"bad-gate", 204},        // previously invalid, now accepted
+		{"agent-question", 204},  // new gate type
+		{"plan-review", 204},     // existing gate type still works
+	}
+	for _, c := range cases {
+		body := `{"gate":"` + c.gate + `","summary":"test"}`
+		req := httptest.NewRequest("POST", "/api/runs/"+runID+"/signal-review", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		srv.Handler().ServeHTTP(rec, req)
+		if rec.Code != c.want {
+			t.Errorf("gate %q: got %d, want %d", c.gate, rec.Code, c.want)
+		}
 	}
 }
 

@@ -307,7 +307,13 @@ Report via coordinator MCP `report` tool before exiting.
        json.dump(ck, f, indent=2)
    "
    ```
-3. Check for fallback JSON and POST result (existing behaviour — unchanged):
+3. Send DONE signal for the phase coordinator (clears the RUNNING state in the dashboard):
+   ```bash
+   curl -s -X POST http://localhost:3000/api/ingest-result \
+     -H "Content-Type: application/json" \
+     -d "{\"run_id\":\"<run_id>\",\"phase\":\"<phase_id>\",\"agent\":\"coordinator\",\"status\":\"DONE\",\"summary\":\"<phase_id> phase complete.\"}"
+   ```
+4. Check for fallback JSON and POST result (existing behaviour — unchanged):
    ```bash
    if [ -f ".claude-team/runs/<run_id>/report-<agent-name>.json" ]; then
      curl -s -X POST http://localhost:3000/api/ingest-result \
@@ -315,7 +321,79 @@ Report via coordinator MCP `report` tool before exiting.
        -d @.claude-team/runs/<run_id>/report-<agent-name>.json
    fi
    ```
-4. Continue to next phase.
+5. Continue to next phase.
+
+## QA→Engineering Feedback Loop (with Circuit Breaker)
+
+After QA phase reports DONE_WITH_CONCERNS or hard FAILs exist in qa-report.md:
+
+### Circuit breaker state
+Track retry count in checkpoint.json:
+```bash
+python3 -c "
+import json
+with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+    ck = json.load(f)
+ck.setdefault('qa_retry_count', 0)
+# increment before each re-run
+ck['qa_retry_count'] += 1
+with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+    json.dump(ck, f, indent=2)
+"
+```
+
+**Circuit breaker limit: 2 retries.** If `qa_retry_count >= 2`, do NOT re-dispatch. Trigger Human Question Gate instead:
+```
+── QA LOOP CIRCUIT BREAKER ──────────────────────────────────────────────
+QA has failed <N> times. Automatic retry stopped.
+Failures: <paste hard FAILs from qa-report.md>
+
+Type  proceed    to continue to DevOps despite failures (they are documented).
+Type  abort      to halt the run.
+─────────────────────────────────────────────────────────────────────────
+```
+
+### Loop steps (when qa_retry_count < 2)
+
+1. Read `.claude-team/runs/<run_id>/qa-report.md` — extract hard FAILs.
+2. Signal dashboard:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"qa-fail\",\"summary\":\"QA FAIL (retry <N>): <first FAIL, ≤200 chars>\"}"
+   ```
+3. Trigger Human Question Gate for any BLOCKED/questions in QA report (see above).
+4. **Remove `engineering` and `qa` from `completed_phases`** so Resume Mode re-runs them:
+   ```bash
+   python3 -c "
+   import json
+   with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+       ck = json.load(f)
+   ck['completed_phases'] = [p for p in ck.get('completed_phases', []) if p not in ('engineering', 'qa')]
+   with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+       json.dump(ck, f, indent=2)
+   "
+   ```
+5. Re-dispatch engineering sub-coordinator with QA failures appended to brief:
+   ```
+   QA FAIL (retry <N>). Fix required before re-running QA.
+   Hard failures from qa-report.md:
+   <paste FAIL list>
+   Tests must pass before reporting DONE.
+   ```
+6. After engineering re-run: re-dispatch QA sub-coordinator. Increment `qa_retry_count`.
+7. If QA passes: continue to DevOps. If QA fails again: check circuit breaker.
+
+### TDD requirement for all engineering agents
+
+Append to every engineering agent brief:
+```
+TDD required:
+1. Write failing tests first for each acceptance criterion.
+2. Implement to make tests pass.
+3. tests_run field REQUIRED: exact command + X/Y passing count.
+4. Do NOT report DONE if any test fails.
+```
 
 ## Human Review Gates
 
@@ -413,16 +491,62 @@ Format the Run ID line as: `Run ID: <exact-value-you-received>`
 Never generate a new run_id. Always forward the one you were given.
 Sub-agents must include this value verbatim in their report JSON `run_id` field.
 
+## Human Question Gate (BLOCKED agents and hard QA failures)
+
+Trigger this gate whenever ANY of these conditions are true after reading an agent report:
+- `status == "BLOCKED"` (agent cannot proceed without human input)
+- `questions[]` is non-empty (agent has specific questions requiring human judgment)
+- QA/security agent reports hard FAIL findings that block launch/merge
+
+### Steps
+
+1. Signal dashboard — POST to Anton server:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"agent-question\",\"summary\":\"<agent>: <first question or BLOCKED reason, ≤200 chars>\"}"
+   ```
+
+2. Print to user:
+   ```
+   ── HUMAN INPUT NEEDED ─────────────────────────────────────────────────────
+   Agent: <agent name>  Phase: <phase>
+   
+   <paste full questions[] list or BLOCKED reason from agent report>
+   
+   Type your answer (one line per question if multiple):
+   ───────────────────────────────────────────────────────────────────────────
+   ```
+
+3. Use `AskUserQuestion` tool — one question per call. For multiple questions, call sequentially.
+
+4. Resolve dashboard gate:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"agent-question\",\"status\":\"approved\",\"feedback\":\"<user answer>\"}"
+   ```
+
+5. Re-dispatch agent with answer appended to brief:
+   ```
+   Human answer to your question: <answer>
+   Continue from where you were blocked.
+   ```
+
+6. If agent returns BLOCKED again after 3 attempts: halt run, write `halted_reason` to checkpoint.json, report to user.
+
 ## Escalation Rules
 
 | Situation | Action |
 |-----------|--------|
-| Agent BLOCKED after 3 retries | Stop. Write context to user. Ask how to proceed. |
+| Agent BLOCKED | Immediately trigger Human Question Gate above |
+| Agent questions[] non-empty | Immediately trigger Human Question Gate above |
+| QA hard FAIL findings | Immediately trigger Human Question Gate above |
 | Security reviewer finds critical issue | Halt all phases immediately. Surface to user. |
 | Two agents produce conflicting designs | Dispatch senior-architect with both outputs. |
 | Agent output has empty sources[] | Reject. Re-dispatch: "Sources required. Search first." |
 | Agent confidence == low, no sources | Reject. Re-dispatch: "Search before finalizing." |
-| Sub-coordinator reports scope gap | Pause. Ask user. Resume on answer. |
+| Sub-coordinator reports scope gap | Immediately trigger Human Question Gate above |
 
 ## Model Selection (Token Efficiency)
 

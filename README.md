@@ -8,6 +8,16 @@ One slash command. They work in parallel. You watch them live in your browser.
 /team-dispatch build user auth with JWT and refresh tokens
 ```
 
+![Anton v3 dashboard — 12 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/demo.gif)
+
+> No new API key. No venv. No LangChain. Runs inside the Claude Code subscription you already have.
+
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
+```
+
 [![CI](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml/badge.svg)](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml)
 [![Go 1.25+](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -17,18 +27,6 @@ One slash command. They work in parallel. You watch them live in your browser.
 
 ![Parallelism](https://img.shields.io/badge/parallelism-3×_on_engineering_phase-blue)
 ![Context isolation](https://img.shields.io/badge/context_isolation-fresh_per_agent-purple)
-
-![Anton v3 dashboard — 12 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/demo.gif)
-
-> No new API key. No venv. No LangChain. Runs inside the Claude Code subscription you already have.
-
----
-
-## Install
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | sh
-```
 
 ## Quick Start
 
@@ -211,7 +209,7 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Tool integrations | 25 MCPs — Jira, Slack, GitHub, Postgres, Sentry… | whatever's in your session |
 | Model cost routing | haiku → sonnet → opus by task complexity | 1 model for everything |
 
-> **Context isolation math:** In a solo 10-agent session, context grows as `N(N+1)/2` turns of history. Anton sub-agents each start fresh — `5.5×` less context overhead at 10 agents.
+> **Context isolation math:** In a solo 10-agent session, context grows as `N(N+1)/2` turns of history. Anton sub-agents each start fresh — `5.5×` less context overhead at 10 agents (theoretical — assumes equal context per turn; actual savings depend on context window usage per agent).
 
 ### Anton vs. other multi-agent frameworks
 
