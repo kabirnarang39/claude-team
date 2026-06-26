@@ -61,6 +61,8 @@ Phase 4 (QA):           qa-engineer → security-reviewer → e2e-tester
 Phase 5 (DevOps):       code-reviewer → devops-engineer
 ```
 
+Anton also evaluates which agents are actually needed before dispatching. Pure backend change? `frontend-engineer` and `dba` skip automatically. Architecture-only phase? `backend-engineer` stays idle. The coordinator writes an agent plan, marks skipped agents `⊘` in the dashboard, and dispatches only what the task actually requires.
+
 ## 👁 Observability — Watch them work
 
 Every agent's reasoning is visible in real time. The live DAG shows all phases and agents — click any node to open the inspector panel. Three tabs: **Agent** (full output + confidence score + token count), **Docs** (reference material the agent read), **Deliverables** (output files produced so far). Nothing is hidden, nothing is a black box.
@@ -69,7 +71,7 @@ Every agent's reasoning is visible in real time. The live DAG shows all phases a
 
 All outputs land in `.claude-team/runs/<run_id>/` as plain Markdown files — yours to read, edit, and version-control.
 
-Each agent has a unique persona — pixel art characters (Ragnar the backend engineer, Jon Snow the security reviewer, Floki the devops engineer) so you can track who's doing what at a glance.
+Each agent has a unique persona — pixel art characters (Ragnar the backend engineer, Jon Snow the security reviewer, Floki the devops engineer) so you can track who's doing what at a glance. Skipped agents appear as `⊘` in the DAG — you see exactly which specialists ran and which were deemed unnecessary for your task.
 
 ## 🧠 Cost-Smart Model Routing
 
@@ -83,9 +85,9 @@ Anton picks the cheapest model that can handle each job — you don't pay opus p
 
 If a Sonnet-tier agent returns `DONE_WITH_CONCERNS` or `BLOCKED`, Anton automatically re-dispatches on Opus before surfacing to you.
 
-Token usage per agent is tracked in SQLite and shown in the inspector panel.
+Token usage per agent is read directly from session transcripts — actual input + output tokens, not estimates — and displayed in the inspector.
 
-## 🔍 Human Review Gates
+## 🔍 Review Gates — Human and Automated
 
 Anton pauses twice in the `feature-build` workflow and shows you what it produced before continuing.
 
@@ -106,6 +108,8 @@ Type  rejected: <feedback>  to redo planning with your feedback.
 Anton prints the ADR and OpenAPI spec and waits for the same prompt. Reject with feedback → re-runs the phase with your notes appended. Loop until approved.
 
 Both gates write to the dashboard and SQLite so review state survives restarts.
+
+**Automated phase review** runs after every phase completes, before the coordinator reports DONE. It checks outputs against a checklist — ADR has a Decision section, implementation has tests, no acceptance criterion left unaddressed. Failing criterion → re-dispatches the responsible agent with specific feedback. If retries exhaust, it escalates to you. You only get interrupted when the automation can't resolve it.
 
 ## ⏸ Resume Interrupted Runs
 
@@ -205,6 +209,7 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Specialists per task | 2–12 depending on workflow | 1 |
 | Context isolation | each sub-agent sees only its role | shared, polluted context |
 | Human review gates | plan + architecture approval before engineers start | none |
+| Smart agent planning | skips unneeded agents per task automatically | dispatches all |
 | Resume on crash | checkpoint per phase, `/team-resume` to continue | start over |
 | Tool integrations | 25 MCPs — Jira, Slack, GitHub, Postgres, Sentry… | whatever's in your session |
 | Model cost routing | haiku → sonnet → opus by task complexity | 1 model for everything |
@@ -223,6 +228,8 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Agent roles in plain Markdown | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
 | SQLite state (survives restarts) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Human review gates | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Automated phase-review + retry | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Smart agent planning (skips unneeded) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Run checkpoint + resume | ✅ | ❌ | ❌ | ❌ | ❌ |
 | 25 built-in MCP integrations | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Cost-smart model routing | ✅ | ❌ | ❌ | ❌ | ❌ |

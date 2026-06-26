@@ -384,7 +384,63 @@ Report via coordinator MCP `report` tool before exiting.
        -d @.claude-team/runs/<run_id>/report-<agent-name>.json
    fi
    ```
-5. Continue to next phase.
+5. Reconcile token counts from JSONL transcripts for all agents in this phase (replace `ACTUAL_RUN_ID`):
+   ```bash
+   python3 << 'PYEOF'
+   import json, glob, os
+
+   RUN_ID = "ACTUAL_RUN_ID"
+   cwd = os.getcwd()
+   session_id = os.environ.get('CLAUDE_CODE_SESSION_ID', '')
+   subagents_dir = os.path.expanduser(
+       '~/.claude/projects/' + cwd.replace('/', '-') + '/' + session_id + '/subagents'
+   )
+   roles = [
+       'senior-architect', 'api-designer', 'backend-engineer', 'frontend-engineer', 'dba',
+       'requirements-analyst', 'tech-writer', 'qa-engineer', 'security-reviewer', 'e2e-tester',
+       'code-reviewer', 'devops-engineer', 'debugger', 'performance-engineer', 'mobile-engineer',
+   ]
+   for path in glob.glob(os.path.join(subagents_dir, 'agent-*.jsonl')):
+       try:
+           with open(path) as f:
+               lines = f.readlines()
+           if not lines:
+               continue
+           brief = str(json.loads(lines[0]).get('message', {}).get('content', ''))
+           if RUN_ID not in brief:
+               continue
+           name = next((r for r in roles if 'You are ' + r in brief), None)
+           if not name:
+               continue
+           report = '.claude-team/runs/' + RUN_ID + '/report-' + name + '.json'
+           if not os.path.exists(report):
+               continue
+           with open(report) as f:
+               data = json.load(f)
+           if data.get('tokens_used', 0) != 0:
+               continue
+           total = 0
+           for line in lines:
+               try:
+                   u = json.loads(line).get('message', {}).get('usage', {})
+                   total += u.get('input_tokens', 0) + u.get('output_tokens', 0)
+               except:
+                   pass
+           if total > 0:
+               data['tokens_used'] = total
+               with open(report, 'w') as f:
+                   json.dump(data, f, indent=2)
+               print(name + ': ' + str(total) + ' tokens patched')
+               import subprocess
+               subprocess.run([
+                   'curl', '-s', '-X', 'POST', 'http://localhost:3000/api/ingest-result',
+                   '-H', 'Content-Type: application/json', '--data-binary', '@' + report
+               ], capture_output=True)
+       except:
+           pass
+   PYEOF
+   ```
+6. Continue to next phase.
 
 ## QA→Engineering Feedback Loop (with Circuit Breaker)
 
