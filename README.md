@@ -8,7 +8,7 @@ One slash command. They work in parallel. You watch them live in your browser.
 /team-dispatch build user auth with JWT and refresh tokens
 ```
 
-![Anton v3 dashboard — 12 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/demo.gif)
+![Anton v3 dashboard — 12 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/home_page_2.png)
 
 > No new API key. No venv. No LangChain. Runs inside the Claude Code subscription you already have.
 
@@ -67,7 +67,10 @@ Anton also evaluates which agents are actually needed before dispatching. Pure b
 
 Every agent's reasoning is visible in real time. The live DAG shows all phases and agents — click any node to open the inspector panel. Three tabs: **Agent** (full output + confidence score + token count), **Docs** (reference material the agent read), **Deliverables** (output files produced so far). Nothing is hidden, nothing is a black box.
 
-![Anton inspector — click any agent node to read its full output, docs, and deliverables](docs/screenshot-inspector.png)
+![Anton inspector — click any agent node to read its full output, docs, and deliverables](docs/home_page_1.png) 
+![](docs/home_page_3.png)
+![](docs/home_page_4.png)
+![](docs/home_page_5.png)
 
 All outputs land in `.claude-team/runs/<run_id>/` as plain Markdown files — yours to read, edit, and version-control.
 
@@ -152,8 +155,6 @@ Anton agents produce **structured analysis and planning outputs** — every file
 | `e2e-tester` | `implementation/tests/e2e/` | E2E test files, curl regression tests |
 | `code-reviewer` | `review-report.md` | Code quality findings, architecture conformance |
 | `devops-engineer` | `implementation/` | Dockerfile, CI/CD pipeline, Helm chart |
-
-See [`docs/examples/feature-build-user-auth/`](docs/examples/feature-build-user-auth/) for real sample outputs — all 12 agents, same task.
 
 ---
 
