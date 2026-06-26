@@ -460,6 +460,12 @@ func main() {
 			return names
 		},
 
+		WriteMCPConfig: func(mcpNames []string) error {
+			claudeDir := filepath.Join(projectPath, ".claude")
+			coordinatorJS := filepath.Join(mcpDir(), "team-coordinator.js")
+			return mcp.WriteProjectMCPs(claudeDir, coordinatorJS, dbPath, registry, mcpNames)
+		},
+
 		GetSettings: func() map[string]string {
 			return map[string]string{
 				"projectPath":  projectPath,

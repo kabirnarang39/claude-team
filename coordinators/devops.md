@@ -34,6 +34,13 @@ For each agent in this phase that is **not** in `devops.agents`:
 
 On entry (before dispatching any agent):
 
+**Configure MCPs** (run once, failure is non-fatal — continue regardless):
+```bash
+curl -s -X POST http://localhost:3000/api/agent-config \
+  -H "Content-Type: application/json" \
+  -d '{"mcps":["filesystem","brave-search","tavily","github","docker","vercel","cloudflare","aws","datadog","sentry"]}' > /dev/null
+```
+
 **Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json to get `completed_agents.devops` list. Agents in that list are already done — skip their dispatch steps.
 
 **Create one Claude task per agent:**

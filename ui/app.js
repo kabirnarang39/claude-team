@@ -517,7 +517,7 @@ function renderRunHistory() {
     const dotGlow  = isRunning ? ';box-shadow:0 0 5px rgba(245,158,11,0.55)' : ''
     const isActive = state.activeRun && r.id === state.activeRun.id
     const taskExcerpt = (r.task_text || '').slice(0, 40) + ((r.task_text || '').length > 40 ? '…' : '')
-    const showResume = isRunning && (Math.floor(Date.now() / 1000) - r.started_at) > 60
+    const showResume = !isRunning && r.status !== 'done'
     const resumeBtn = showResume
       ? `<button class="ri-resume-btn" onclick="event.stopPropagation();openResumeModal('${esc(r.id)}')">Resume</button>`
       : ''

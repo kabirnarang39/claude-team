@@ -43,6 +43,13 @@ For each agent in a phase that is **not** in the plan's agent list:
 
 On entry (before dispatching any agent):
 
+**Configure MCPs** (run once, failure is non-fatal — continue regardless):
+```bash
+curl -s -X POST http://localhost:3000/api/agent-config \
+  -H "Content-Type: application/json" \
+  -d '{"mcps":["filesystem","brave-search","tavily","github","figma","postgres","redis","supabase","mysql","mongodb","docker"]}' > /dev/null
+```
+
 **Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json — get `completed_agents.architecture` and `completed_agents.engineering` lists.
 
 **Create Claude tasks for all agents:**

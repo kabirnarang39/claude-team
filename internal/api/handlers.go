@@ -549,6 +549,27 @@ func (s *Server) handleRunFileRaw(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func (s *Server) handleAgentConfig(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+	if s.cfg.WriteMCPConfig == nil {
+		http.Error(w, "not configured", 500)
+		return
+	}
+	var body struct {
+		MCPs []string `json:"mcps"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+	if err := s.cfg.WriteMCPConfig(body.MCPs); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Store == nil {
 		w.Header().Set("Content-Type", "application/json")

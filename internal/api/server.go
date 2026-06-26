@@ -30,6 +30,10 @@ type Config struct {
 	GetSettings func() map[string]string
 	// SaveSettings persists updated settings.
 	SaveSettings func(settings map[string]string) error
+
+	// WriteMCPConfig merges the named MCPs into the project's .claude/settings.json.
+	// Called by POST /api/agent-config before coordinators dispatch agents.
+	WriteMCPConfig func(mcps []string) error
 }
 
 type Server struct {
@@ -61,6 +65,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/settings", s.handleGetSettings)
 	mux.HandleFunc("POST /api/settings", s.handleSettings)
 	mux.HandleFunc("POST /api/ingest-result", s.handleIngestResult)
+	mux.HandleFunc("POST /api/agent-config", s.handleAgentConfig)
 	mux.HandleFunc("POST /api/runs/{id}/signal-review", s.handleSignalReview)
 	mux.HandleFunc("POST /api/runs/{id}/resolve-review", s.handleResolveReview)
 	mux.HandleFunc("GET /api/stats", s.handleStats)
