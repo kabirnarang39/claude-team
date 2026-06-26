@@ -570,6 +570,35 @@ func (s *Server) handleAgentConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
+func (s *Server) handleDeleteRun(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if strings.Contains(id, "..") || strings.Contains(id, "/") {
+		http.Error(w, "invalid run id", 400)
+		return
+	}
+	if s.cfg.Store == nil {
+		http.Error(w, "not configured", 500)
+		return
+	}
+	if err := s.cfg.Store.DeleteRun(id); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleClearAllRuns(w http.ResponseWriter, r *http.Request) {
+	if s.cfg.Store == nil {
+		http.Error(w, "not configured", 500)
+		return
+	}
+	if err := s.cfg.Store.DeleteAllRuns(); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.Store == nil {
 		w.Header().Set("Content-Type", "application/json")

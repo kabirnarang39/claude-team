@@ -362,6 +362,27 @@ func (s *Store) GetDeliverableIndex(runID string) (map[string][2]string, error) 
 	return index, rows.Err()
 }
 
+func (s *Store) DeleteRun(id string) error {
+	tables := []string{"agent_results", "agent_statuses", "phases", "messages", "human_reviews"}
+	for _, t := range tables {
+		if _, err := s.db.Exec(`DELETE FROM `+t+` WHERE run_id = ?`, id); err != nil {
+			return err
+		}
+	}
+	_, err := s.db.Exec(`DELETE FROM runs WHERE id = ?`, id)
+	return err
+}
+
+func (s *Store) DeleteAllRuns() error {
+	tables := []string{"agent_results", "agent_statuses", "phases", "messages", "human_reviews", "runs"}
+	for _, t := range tables {
+		if _, err := s.db.Exec(`DELETE FROM ` + t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *Store) WriteTask(runtimeDir, text string) error {
 	content := "# Pending Task\n\n" + text + "\n"
 	return os.WriteFile(filepath.Join(runtimeDir, "pending-task.md"), []byte(content), 0644)

@@ -247,8 +247,12 @@ html, body {
   to { stroke-dashoffset: -18; }
 }
 @keyframes edgePulse {
-  0%, 100% { stroke-opacity: 0.5; }
-  50%       { stroke-opacity: 0.9; }
+  0%, 100% { stroke-opacity: 0.45; }
+  50%       { stroke-opacity: 0.85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dag-edge.running { animation: none; }
+  .ob-card .ob-logo-mark { animation: none; }
 }
 @keyframes runItemEnter {
   from { opacity: 0; transform: translateX(-8px); }
@@ -2469,6 +2473,16 @@ html, body {
   pointer-events: none;
 }
 
+/* Navbar inside the fullscreen no-runs overlay */
+.ob-nav {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  background: #06091A;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* Ambient background orbs */
 .ob-ambient {
   position: absolute;
@@ -2482,30 +2496,7 @@ html, body {
   filter: blur(100px);
   will-change: transform;
 }
-.ob-orb-1 {
-  width: 700px;
-  height: 700px;
-  background: radial-gradient(circle, rgba(245,158,11,0.20) 0%, transparent 60%);
-  top: -200px;
-  left: -150px;
-  animation: orbFloat 15s ease-in-out infinite;
-}
-.ob-orb-2 {
-  width: 550px;
-  height: 550px;
-  background: radial-gradient(circle, rgba(245,158,11,0.14) 0%, transparent 60%);
-  bottom: -150px;
-  right: -100px;
-  animation: orbFloat 18s ease-in-out infinite reverse;
-}
-.ob-orb-3 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(245,158,11,0.10) 0%, transparent 60%);
-  top: 40%;
-  left: 55%;
-  animation: orbFloat 12s ease-in-out 3s infinite;
-}
+.ob-orb-1, .ob-orb-2, .ob-orb-3 { display: none; }
 @keyframes orbFloat {
   0%, 100% { transform: translate(0, 0); }
   33%       { transform: translate(40px, -30px); }
@@ -2873,15 +2864,6 @@ html, body {
 }
 
 /* ── Onboarding card: amber/navy colour overrides ────────────────────────────── */
-.ob-card .ob-orb-1 {
-  background: radial-gradient(circle, rgba(245,158,11,0.32) 0%, transparent 60%);
-}
-.ob-card .ob-orb-2 {
-  background: radial-gradient(circle, rgba(245,158,11,0.22) 0%, transparent 60%);
-}
-.ob-card .ob-orb-3 {
-  background: radial-gradient(circle, rgba(245,158,11,0.16) 0%, transparent 60%);
-}
 .ob-card .demo-phase[data-state="running"] {
   background: rgba(245,158,11,0.08);
   border-color: rgba(245,158,11,0.38);

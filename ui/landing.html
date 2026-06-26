@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anton — Multi-Agent Engineering Coordinator</title>
+  <meta name="description" content="One slash command fires a full AI engineering team: planner, architect, engineers, QA, security, DevOps. Watch them live.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #06091A;
+      --surface: #0D1426;
+      --surface-hi: #152035;
+      --border: rgba(160,190,230,0.10);
+      --border-hi: rgba(160,190,230,0.20);
+      --accent: #F59E0B;
+      --accent-dim: rgba(245,158,11,0.12);
+      --text: #CBD9F0;
+      --text-hi: #EEF4FF;
+      --muted: #4A6480;
+      --dim: #1A2840;
+      --phase-plan: #3B82F6;
+      --phase-eng: #22C55E;
+      --phase-qa: #F59E0B;
+      --phase-sec: #EF4444;
+      --phase-ops: #8B5CF6;
+      --font-sans: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+      --ease-out: cubic-bezier(0.16,1,0.3,1);
+      --ease-spring: cubic-bezier(0.22,1,0.36,1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 24px;
+      transition: background 0.3s var(--ease-out), border-color 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+    .nav.scrolled {
+      background: rgba(6,9,26,0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-color: var(--border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 8px;
+      text-decoration: none; color: var(--text-hi);
+      font-weight: 600; font-size: 15px; letter-spacing: -0.01em;
+    }
+    .nav-badge {
+      font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+      letter-spacing: 0.08em; color: var(--accent);
+      background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.25);
+      padding: 1px 5px; border-radius: 3px;
+    }
+    .nav-sep { flex: 1; }
+    .nav-link {
+      color: var(--muted); text-decoration: none;
+      font-size: 13px; font-weight: 500; transition: color 0.15s;
+    }
+    .nav-link:hover { color: var(--text); }
+    .nav-gh {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--border-hi); border-radius: 6px;
+      color: var(--text); text-decoration: none;
+      font-size: 13px; font-weight: 500;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .nav-gh:hover { border-color: rgba(160,190,230,0.35); background: rgba(160,190,230,0.05); }
+
+    /* HERO */
+    .hero {
+      min-height: 100dvh;
+      display: flex; align-items: center;
+      padding: 96px 32px 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(160,190,230,0.07) 1px, transparent 0);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 0; right: 0; height: 180px;
+      background: linear-gradient(transparent, var(--bg));
+      pointer-events: none;
+    }
+    .hero-inner {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 72px; align-items: center; position: relative; z-index: 1;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+      background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.2);
+      padding: 4px 10px; border-radius: 4px; margin-bottom: 24px;
+    }
+    .eyebrow-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent);
+      animation: pulse-dot 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+
+    h1 {
+      font-size: clamp(36px, 4.5vw, 58px);
+      font-weight: 700; letter-spacing: -0.03em; line-height: 1.07;
+      color: var(--text-hi); text-wrap: balance; margin-bottom: 20px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+
+    .hero-sub {
+      font-size: 17px; line-height: 1.65; color: var(--muted);
+      max-width: 44ch; margin-bottom: 36px;
+    }
+    .hero-sub strong { color: var(--text); font-weight: 500; }
+
+    .hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 22px; background: var(--accent);
+      color: #0A0800; font-weight: 600; font-size: 14px;
+      text-decoration: none; border-radius: 6px;
+      transition: background 0.15s, transform 0.2s var(--ease-spring);
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #FBBF24; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 22px; border: 1px solid var(--border-hi);
+      color: var(--text); font-weight: 500; font-size: 14px;
+      text-decoration: none; border-radius: 6px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-ghost:hover { border-color: rgba(160,190,230,0.3); background: rgba(160,190,230,0.05); }
+
+    .hero-trust {
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .trust-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #22C55E;
+      flex-shrink: 0;
+    }
+
+    /* TERMINAL */
+    .hero-terminal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.04);
+    }
+    .term-chrome {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 14px; background: var(--surface-hi);
+      border-bottom: 1px solid var(--border);
+    }
+    .tc { width: 10px; height: 10px; border-radius: 50%; }
+    .tc-r { background: #FF5F57; } .tc-y { background: #FEBC2E; } .tc-g { background: #28C840; }
+    .term-title {
+      margin: 0 auto; font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    }
+    .term-body {
+      padding: 20px; font-family: var(--font-mono); font-size: 13px;
+      line-height: 1.7; min-height: 290px;
+    }
+    .t-prompt { color: var(--accent); }
+    .t-cmd { color: var(--text-hi); }
+    .t-arg { color: #93C5FD; }
+    .t-dim { color: var(--muted); }
+    .t-cursor { display: inline-block; animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+    .t-phase-row { display: flex; gap: 8px; align-items: center; margin-top: 3px; }
+    .t-phase-name { min-width: 110px; font-size: 12px; }
+    .t-bar { flex: 1; height: 3px; background: var(--dim); border-radius: 2px; overflow: hidden; }
+    .t-fill { height: 100%; border-radius: 2px; transform: scaleX(0); transform-origin: left center; transition: transform 1s var(--ease-out); }
+    .t-pct { font-size: 11px; min-width: 28px; text-align: right; color: var(--muted); }
+
+    /* STATS */
+    .stats-wrap { padding: 0 32px; margin-bottom: 100px; }
+    .stats-grid {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(4,1fr);
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; background: var(--surface);
+    }
+    .stat {
+      padding: 28px 32px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-val {
+      font-family: var(--font-mono); font-size: 38px; font-weight: 700;
+      color: var(--accent); letter-spacing: -0.02em; line-height: 1;
+      margin-bottom: 6px; font-variant-numeric: tabular-nums;
+    }
+    .stat-lbl { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+    /* SECTIONS */
+    .section { padding: 100px 32px; max-width: 1200px; margin: 0 auto; }
+    .section-full { padding: 100px 0; }
+
+    .eyebrow {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+      margin-bottom: 16px; display: block;
+    }
+    h2 {
+      font-size: clamp(26px, 3.2vw, 42px); font-weight: 700;
+      letter-spacing: -0.025em; line-height: 1.1;
+      color: var(--text-hi); text-wrap: balance; margin-bottom: 14px;
+    }
+    .sec-sub {
+      font-size: 16px; line-height: 1.65;
+      color: var(--muted); max-width: 52ch;
+    }
+
+    /* HOW IT WORKS */
+    .how-grid {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr 40px 1fr;
+      gap: 0; align-items: start; margin-top: 52px;
+    }
+    .how-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 28px 24px;
+    }
+    .how-icon {
+      width: 38px; height: 38px;
+      background: var(--accent-dim); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      color: var(--accent); margin-bottom: 14px;
+    }
+    .how-title { font-size: 15px; font-weight: 600; color: var(--text-hi); margin-bottom: 8px; }
+    .how-body { font-size: 13px; line-height: 1.6; color: var(--muted); }
+    .how-code {
+      font-family: var(--font-mono); font-size: 12px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 5px; padding: 8px 12px; margin-top: 12px;
+      color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .how-arrow {
+      display: flex; align-items: center; justify-content: center;
+      padding-top: 52px; color: var(--dim);
+    }
+
+    /* PIPELINE */
+    .pipeline-wrap { padding: 100px 32px; }
+    .pipeline-head { max-width: 1200px; margin: 0 auto 48px; }
+    .pipeline-scroll { max-width: 1200px; margin: 0 auto; overflow-x: auto; padding-bottom: 8px; }
+    .pipeline-grid {
+      display: grid; grid-template-columns: repeat(5, minmax(190px, 1fr));
+      gap: 12px; min-width: 960px;
+    }
+    .phase-col { display: flex; flex-direction: column; gap: 8px; }
+    .phase-hdr {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--surface); margin-bottom: 4px;
+    }
+    .phase-pip { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .phase-nm {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text);
+    }
+    .agent-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px;
+      transition: border-color 0.15s, background 0.15s, transform 0.2s var(--ease-out);
+      cursor: default;
+    }
+    .agent-card:hover { background: var(--surface-hi); transform: translateY(-2px); }
+    .phase-col[data-phase="plan"] .agent-card:hover   { border-color: rgba(59,130,246,0.4); }
+    .phase-col[data-phase="eng"]  .agent-card:hover   { border-color: rgba(34,197,94,0.4); }
+    .phase-col[data-phase="qa"]   .agent-card:hover   { border-color: rgba(245,158,11,0.4); }
+    .phase-col[data-phase="sec"]  .agent-card:hover   { border-color: rgba(239,68,68,0.4); }
+    .phase-col[data-phase="ops"]  .agent-card:hover   { border-color: rgba(139,92,246,0.4); }
+    .agent-sym { font-size: 15px; line-height: 1; margin-bottom: 7px; display: block; }
+    .agent-nm { font-size: 13px; font-weight: 600; color: var(--text-hi); margin-bottom: 2px; }
+    .agent-role { font-size: 11px; color: var(--muted); }
+
+    /* FEATURES BENTO */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 12px; margin-top: 52px;
+    }
+    .feat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 28px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .feat:hover { border-color: var(--border-hi); background: var(--surface-hi); }
+    .feat.w2 { grid-column: span 2; }
+    .feat-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    .feat-title { font-size: 15px; font-weight: 600; color: var(--text-hi); margin-bottom: 8px; }
+    .feat-body { font-size: 13px; line-height: 1.6; color: var(--muted); }
+    .inline-code {
+      font-family: var(--font-mono); font-size: 11px;
+      background: var(--bg); padding: 1px 5px; border-radius: 3px; color: var(--text);
+    }
+
+    /* CTA */
+    .cta-section { padding: 100px 32px; text-align: center; }
+    .cta-inner { max-width: 640px; margin: 0 auto; }
+    .cta-install {
+      display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+      max-width: 480px; margin: 0 auto 20px;
+      text-align: left;
+    }
+    .cta-label {
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+      padding: 0 12px; border-right: 1px solid var(--border);
+      align-self: stretch; display: flex; align-items: center;
+      background: var(--bg); white-space: nowrap; flex-shrink: 0;
+    }
+    .cta-cmd {
+      font-family: var(--font-mono); font-size: 13px; color: var(--text-hi);
+      padding: 14px 16px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cta-btns { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+    /* FOOTER */
+    footer { padding: 40px 32px; border-top: 1px solid var(--border); }
+    .footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-logo {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--muted); font-size: 14px; text-decoration: none;
+    }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-link {
+      color: var(--muted); text-decoration: none;
+      font-size: 13px; transition: color 0.15s;
+    }
+    .footer-link:hover { color: var(--text); }
+
+    /* SCROLL REVEALS */
+    .reveal {
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+    }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+
+    /* PREREQ PILLS */
+    .prereq-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .prereq-pill {
+      font-family: var(--font-mono); font-size: 11px;
+      background: var(--dim); border: 1px solid var(--border); border-radius: 4px;
+      padding: 3px 8px; color: var(--muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .prereq-pill svg { width: 10px; height: 10px; color: var(--accent); }
+
+    /* QUICK START */
+    .qs-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; margin-top: 48px; background: var(--border);
+    }
+    .qs-step {
+      background: var(--surface); padding: 28px 24px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .qs-num {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase;
+    }
+    .qs-title { font-size: 15px; font-weight: 600; color: var(--text-hi); }
+    .qs-code {
+      font-family: var(--font-mono); font-size: 12px; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+      padding: 10px 14px; white-space: pre; overflow-x: auto; display: block;
+    }
+    .qs-note { font-size: 12px; color: var(--muted); margin-top: -4px; }
+
+    /* COPY WRAP */
+    .copy-wrap {
+      position: relative; display: flex; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+      max-width: 520px; margin: 0 auto 20px;
+    }
+    .copy-btn {
+      position: absolute; right: 10px;
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+      background: transparent; border: 1px solid var(--border); border-radius: 4px;
+      padding: 3px 8px; cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--border-hi); }
+    .copy-btn.copied { color: #22C55E; border-color: rgba(34,197,94,0.3); }
+
+    @media (max-width: 768px) { .qs-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .qs-grid { grid-template-columns: 1fr; } }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; max-width: 620px; }
+      .hero-terminal { display: none; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .stat:nth-child(2) { border-right: none; }
+      .stat:nth-child(3), .stat:nth-child(4) { border-top: 1px solid var(--border); }
+      .feat-grid { grid-template-columns: repeat(2,1fr); }
+      .feat.w2 { grid-column: span 1; }
+      .how-grid { grid-template-columns: 1fr; gap: 12px; }
+      .how-arrow { padding-top: 0; }
+    }
+    @media (max-width: 640px) {
+      .nav { padding: 0 20px; gap: 16px; }
+      .nav-link { display: none; }
+      .hero { padding: 88px 20px 64px; }
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .feat-grid { grid-template-columns: 1fr; }
+      .pipeline-wrap, .section, .stats-wrap { padding-left: 20px; padding-right: 20px; }
+      .footer-inner { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav" role="navigation" aria-label="Main">
+  <a href="landing.html" class="nav-logo">
+    <span aria-hidden="true">⚡</span>
+    <span>Anton</span>
+    <span class="nav-badge">v1.4.2</span>
+  </a>
+  <div class="nav-sep"></div>
+  <a href="#how" class="nav-link">How it works</a>
+  <a href="#team" class="nav-link">The team</a>
+  <a href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener" class="nav-gh" aria-label="View on GitHub (opens in new tab)">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <div class="hero-eyebrow">
+        <span class="eyebrow-dot" aria-hidden="true"></span>
+        Multi-agent coordinator · Claude Code
+      </div>
+      <h1 id="hero-heading">
+        Your Claude Code just got a team of <em>11 specialists.</em>
+      </h1>
+      <p class="hero-sub">
+        One slash command fires a full engineering team in parallel:
+        <strong>planner, architect, engineers, QA, security, DevOps.</strong>
+        You watch them live.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener" class="btn-primary">
+          View on GitHub
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="index.html" class="btn-ghost">Open Dashboard</a>
+      </div>
+      <div class="hero-trust">
+        <span class="trust-dot" aria-hidden="true"></span>
+        Runs inside your existing Claude Code session
+      </div>
+    </div>
+
+    <div class="hero-terminal" aria-hidden="true">
+      <div class="term-chrome">
+        <span class="tc tc-r"></span><span class="tc tc-y"></span><span class="tc tc-g"></span>
+        <span class="term-title">Claude Code — ~/my-project</span>
+      </div>
+      <div class="term-body">
+        <div>
+          <span class="t-prompt">› </span><span id="term-cmd"></span><span class="t-cursor" id="term-cur">▋</span>
+        </div>
+        <div id="term-out" style="display:none; margin-top: 14px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-wrap">
+  <div class="stats-grid">
+    <div class="stat reveal">
+      <div class="stat-val" data-count="11">11</div>
+      <div class="stat-lbl">AI specialists</div>
+    </div>
+    <div class="stat reveal" style="transition-delay:60ms">
+      <div class="stat-val" data-count="5">5</div>
+      <div class="stat-lbl">execution phases</div>
+    </div>
+    <div class="stat reveal" style="transition-delay:120ms">
+      <div class="stat-val" style="font-size:28px; letter-spacing:-0.01em;">parallel</div>
+      <div class="stat-lbl">agent execution</div>
+    </div>
+    <div class="stat reveal" style="transition-delay:180ms">
+      <div class="stat-val" style="font-size:24px; color:#22C55E;">live</div>
+      <div class="stat-lbl">browser dashboard</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div id="how">
+  <div class="section">
+    <span class="eyebrow reveal">How it works</span>
+    <h2 class="reveal">From task to team in one command.</h2>
+    <p class="sec-sub reveal">Anton runs entirely within Claude Code. No accounts, no new tools, no separate runtime.</p>
+    <div class="how-grid">
+      <div class="how-card reveal">
+        <div class="how-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div class="how-title">Dispatch</div>
+        <div class="how-body">Type one slash command in Claude Code. Describe your task in plain English — the team handles the rest.</div>
+        <code class="how-code">/team-dispatch build Stripe billing</code>
+      </div>
+      <div class="how-arrow reveal" aria-hidden="true">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <div class="how-card reveal" style="transition-delay:80ms">
+        <div class="how-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <div class="how-title">Execute</div>
+        <div class="how-body">Anton dispatches 11 specialists across 5 phases. Planning runs first; engineering, QA, and security run in parallel where dependencies allow.</div>
+      </div>
+      <div class="how-arrow reveal" style="transition-delay:80ms" aria-hidden="true">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <div class="how-card reveal" style="transition-delay:160ms">
+        <div class="how-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div class="how-title">Inspect</div>
+        <div class="how-body">A live DAG renders in your browser. Click any agent to see their output, token usage, and deliverables as they complete.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE / TEAM -->
+<div id="team">
+  <div class="pipeline-wrap">
+    <div class="pipeline-head">
+      <span class="eyebrow reveal">The team</span>
+      <h2 class="reveal">11 specialists. 5 phases.</h2>
+      <p class="sec-sub reveal">Each agent has a defined role, system prompt, and output format. They coordinate via a shared MCP layer: <span class="inline-code">report</span>, <span class="inline-code">ask</span>, <span class="inline-code">reply</span>.</p>
+    </div>
+    <div class="pipeline-scroll">
+      <div class="pipeline-grid">
+
+        <div class="phase-col reveal" data-phase="plan">
+          <div class="phase-hdr">
+            <span class="phase-pip" style="background:var(--phase-plan)"></span>
+            <span class="phase-nm">Planning</span>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">◈</span>
+            <div class="agent-nm">Tyrion</div>
+            <div class="agent-role">Strategist & planner</div>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">⊕</span>
+            <div class="agent-nm">Samwell</div>
+            <div class="agent-role">Requirements analyst</div>
+          </div>
+        </div>
+
+        <div class="phase-col reveal" data-phase="eng" style="transition-delay:60ms">
+          <div class="phase-hdr">
+            <span class="phase-pip" style="background:var(--phase-eng)"></span>
+            <span class="phase-nm">Engineering</span>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">△</span>
+            <div class="agent-nm">Bran</div>
+            <div class="agent-role">Frontend engineer</div>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">⚙</span>
+            <div class="agent-nm">Ragnar</div>
+            <div class="agent-role">Backend engineer</div>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">◇</span>
+            <div class="agent-nm">+ 4 more</div>
+            <div class="agent-role">Specialist engineers</div>
+          </div>
+        </div>
+
+        <div class="phase-col reveal" data-phase="qa" style="transition-delay:120ms">
+          <div class="phase-hdr">
+            <span class="phase-pip" style="background:var(--phase-qa)"></span>
+            <span class="phase-nm">QA</span>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">✦</span>
+            <div class="agent-nm">Arya</div>
+            <div class="agent-role">Test engineer</div>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">⬡</span>
+            <div class="agent-nm">Jon Snow</div>
+            <div class="agent-role">Integration tester</div>
+          </div>
+        </div>
+
+        <div class="phase-col reveal" data-phase="sec" style="transition-delay:180ms">
+          <div class="phase-hdr">
+            <span class="phase-pip" style="background:var(--phase-sec)"></span>
+            <span class="phase-nm">Security</span>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">⬟</span>
+            <div class="agent-nm">Cersei</div>
+            <div class="agent-role">OWASP security reviewer</div>
+          </div>
+        </div>
+
+        <div class="phase-col reveal" data-phase="ops" style="transition-delay:240ms">
+          <div class="phase-hdr">
+            <span class="phase-pip" style="background:var(--phase-ops)"></span>
+            <span class="phase-nm">DevOps</span>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">⬢</span>
+            <div class="agent-nm">Eddard</div>
+            <div class="agent-role">Infrastructure & CI/CD</div>
+          </div>
+          <div class="agent-card">
+            <span class="agent-sym">◎</span>
+            <div class="agent-nm">Floki</div>
+            <div class="agent-role">Build & deployment</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section">
+  <span class="eyebrow reveal">Capabilities</span>
+  <h2 class="reveal">Built for real engineering work.</h2>
+  <div class="feat-grid">
+
+    <div class="feat w2 reveal">
+      <div class="feat-icon" style="background:rgba(59,130,246,0.12);color:#3B82F6">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+      </div>
+      <div class="feat-title">Live WebSocket dashboard</div>
+      <div class="feat-body">A real-time DAG visualization in your browser. Watch agents execute, inspect their output and token usage, and review deliverables as they're produced, without leaving your workflow.</div>
+    </div>
+
+    <div class="feat reveal" style="transition-delay:40ms">
+      <div class="feat-icon" style="background:rgba(34,197,94,0.12);color:#22C55E">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      </div>
+      <div class="feat-title">Parallel execution</div>
+      <div class="feat-body">Phases gate on dependencies; agents within a phase run in parallel. Sequential and parallel modes configurable per workflow.</div>
+    </div>
+
+    <div class="feat reveal" style="transition-delay:40ms">
+      <div class="feat-icon" style="background:rgba(245,158,11,0.12);color:#F59E0B">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <div class="feat-title">YAML workflows</div>
+      <div class="feat-body">Drop a <span class="inline-code">.yaml</span> into <span class="inline-code">workflows/</span> to define custom agent pipelines for any use case.</div>
+    </div>
+
+    <div class="feat reveal" style="transition-delay:80ms">
+      <div class="feat-icon" style="background:rgba(239,68,68,0.12);color:#EF4444">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+      </div>
+      <div class="feat-title">Security built-in</div>
+      <div class="feat-body">A dedicated OWASP security reviewer runs on every task — security coverage built into every workflow.</div>
+    </div>
+
+    <div class="feat reveal" style="transition-delay:80ms">
+      <div class="feat-icon" style="background:rgba(139,92,246,0.12);color:#8B5CF6">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+      </div>
+      <div class="feat-title">Human review gates</div>
+      <div class="feat-body">Pause the pipeline at any checkpoint for human review before agents proceed to the next phase.</div>
+    </div>
+
+    <div class="feat reveal" style="transition-delay:120ms">
+      <div class="feat-icon" style="background:rgba(99,143,196,0.12);color:#93C5FD">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z"/></svg>
+      </div>
+      <div class="feat-title">MCP native</div>
+      <div class="feat-body">Exposes a stdio MCP server. Agents coordinate via <span class="inline-code">report</span>, <span class="inline-code">ask</span>, and <span class="inline-code">reply</span> tools. No polling, no shared memory.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-inner">
+    <div class="hero-eyebrow" style="justify-content:center;margin-bottom:24px">
+      <span class="eyebrow-dot" aria-hidden="true"></span>
+      Free &amp; open source
+    </div>
+    <h2 class="reveal" style="margin-bottom:16px">Ship faster with an AI team that never sleeps.</h2>
+    <p class="sec-sub reveal" style="margin:0 auto 36px;text-align:center">
+      Open source, runs on your machine. No API costs beyond Claude, no accounts, no subscription.
+    </p>
+    <div class="cta-install reveal">
+      <span class="cta-label">go</span>
+      <span class="cta-cmd">install github.com/kabirnarang39/claude-team@latest</span>
+    </div>
+    <div class="cta-btns reveal" style="transition-delay:60ms">
+      <a href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+      <a href="index.html" class="btn-ghost">Open Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="landing.html" class="footer-logo">
+      <span aria-hidden="true">⚡</span>
+      <span>Anton</span>
+    </a>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener" class="footer-link">GitHub</a>
+      <a href="https://github.com/kabirnarang39/claude-team/blob/main/docs/examples/" target="_blank" rel="noopener" class="footer-link">Examples</a>
+      <a href="index.html" class="footer-link">Dashboard</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// NAV glass on scroll
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 48);
+}, { passive: true });
+
+// TERMINAL TYPEWRITER
+const termCmd = document.getElementById('term-cmd');
+const termCur = document.getElementById('term-cur');
+const termOut = document.getElementById('term-out');
+const fullCmd = '/team-dispatch build Stripe billing with usage metering';
+
+let ci = 0;
+function typeNext() {
+  if (ci < fullCmd.length) {
+    termCmd.textContent = fullCmd.slice(0, ++ci);
+    setTimeout(typeNext, ci < 14 ? 45 : 22);
+  } else {
+    termCur.style.display = 'none';
+    setTimeout(revealOutput, 400);
+  }
+}
+setTimeout(typeNext, 900);
+
+function revealOutput() {
+  termOut.style.display = 'block';
+  const phases = [
+    { name: 'Planning',     color: '#3B82F6', mode: 'done',     delay: 0    },
+    { name: 'Architecture', color: '#22C55E', mode: 'done',     delay: 700  },
+    { name: 'Engineering',  color: '#22C55E', mode: 'progress', delay: 1400 },
+    { name: 'QA + Sec',     color: '#F59E0B', mode: 'waiting',  delay: 2100 },
+    { name: 'DevOps',       color: '#8B5CF6', mode: 'waiting',  delay: 2100 },
+  ];
+
+  termOut.innerHTML =
+    '<div class="t-dim">⚡ Anton dispatching 11 specialists across 5 phases…</div>' +
+    '<div style="margin-top:10px" id="phaselist"></div>';
+
+  const list = document.getElementById('phaselist');
+
+  phases.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 't-phase-row';
+    row.innerHTML =
+      `<span class="t-phase-name" style="color:${p.color};opacity:.9;font-size:12px">${p.name}</span>` +
+      `<div class="t-bar"><div class="t-fill" id="fill${i}" style="background:${p.color}"></div></div>` +
+      `<span class="t-pct" id="pct${i}"></span>`;
+    list.appendChild(row);
+
+    setTimeout(() => {
+      const fill = document.getElementById('fill' + i);
+      const pct  = document.getElementById('pct' + i);
+      if (p.mode === 'done') {
+        fill.style.transform = 'scaleX(1)';
+        setTimeout(() => { pct.textContent = '✓'; pct.style.color = p.color; }, 900);
+      } else if (p.mode === 'progress') {
+        let v = 0;
+        const iv = setInterval(() => {
+          v = Math.min(v + 1.4, 72);
+          fill.style.transform = 'scaleX(' + (v / 100) + ')';
+          pct.textContent = Math.floor(v) + '%';
+          pct.style.color = p.color;
+          if (v >= 72) clearInterval(iv);
+        }, 40);
+      } else {
+        pct.textContent = '—';
+      }
+    }, p.delay);
+  });
+}
+
+// SCROLL REVEALS
+const reveals = document.querySelectorAll('.reveal');
+const ro = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
+reveals.forEach(el => ro.observe(el));
+
+// COUNT-UP for stat numbers
+const statEls = document.querySelectorAll('.stat-val[data-count]');
+const co = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el = e.target;
+    const target = parseInt(el.dataset.count);
+    let cur = 0;
+    const step = target / 18;
+    const iv = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.textContent = Math.round(cur);
+      if (cur >= target) clearInterval(iv);
+    }, 40);
+    co.unobserve(el);
+  });
+}, { threshold: 0.5 });
+statEls.forEach(el => co.observe(el));
+</script>
+</body>
+</html>

@@ -196,7 +196,13 @@ function updateOnboardingVisibility() {
   const rd = document.getElementById('run-detail')
   const inspector = document.getElementById('inspector')
   if (!ob || !rd) return
-  ob.style.display = hasRuns ? 'none' : 'flex'
+  if (hasRuns) {
+    ob.classList.add('ob-exit')
+    setTimeout(() => { ob.style.display = 'none' }, 500)
+  } else {
+    ob.style.display = 'flex'
+    ob.classList.remove('ob-exit')
+  }
   rd.style.display = hasRuns ? 'block' : 'none'
   if (inspector) inspector.style.display = (hasRuns && state.activeRun) ? 'flex' : 'none'
 }
@@ -521,10 +527,11 @@ function renderRunHistory() {
     const dotGlow  = isRunning ? ';box-shadow:0 0 5px rgba(245,158,11,0.55)' : ''
     const isActive = state.activeRun && r.id === state.activeRun.id
     const taskExcerpt = (r.task_text || '').slice(0, 40) + ((r.task_text || '').length > 40 ? '…' : '')
-    const showResume = !isRunning && r.status !== 'done'
+    const showResume = r.status !== 'done'
     const resumeBtn = showResume
       ? `<button class="ri-resume-btn" onclick="event.stopPropagation();openResumeModal('${esc(r.id)}')">Resume</button>`
       : ''
+    const deleteBtn = `<button class="ri-delete-btn" onclick="event.stopPropagation();deleteRun('${esc(r.id)}')" title="Delete run">×</button>`
     const wfBadge = r.workflow_name
       ? `<span class="ri-wf-badge">${esc(r.workflow_name.replace(/-/g, ' '))}</span>`
       : ''
@@ -534,6 +541,7 @@ function renderRunHistory() {
           <span class="status-badge" style="background:${dotColor}${dotGlow}"></span>
           <span class="ri-name">${esc(friendlyRunName(r))}</span>
           ${resumeBtn}
+          ${deleteBtn}
         </div>
         <div class="ri-meta">${wfBadge}<span class="ri-time">${fmtTime(r.started_at)}</span></div>
       </div>`
@@ -567,6 +575,34 @@ function openResumeModal(runId) {
     if (e.target === overlay) overlay.remove()
   })
   document.body.appendChild(overlay)
+}
+
+async function deleteRun(runId) {
+  const res = await fetch(`/api/runs/${encodeURIComponent(runId)}`, { method: 'DELETE' })
+  if (!res.ok) return
+  state.runs = state.runs.filter(r => r.id !== runId)
+  if (state.activeRun && state.activeRun.id === runId) {
+    state.activeRun = null
+    state.agents = []
+    document.getElementById('run-detail').style.display = 'none'
+    document.getElementById('inspector').style.display = 'none'
+  }
+  renderRunHistory()
+  updateOnboardingVisibility()
+  if (!state.activeRun && state.runs.length > 0) await loadRunDetail(state.runs[0].id)
+}
+
+async function clearAllRuns() {
+  if (!state.runs.length) return
+  const res = await fetch('/api/runs', { method: 'DELETE' })
+  if (!res.ok) return
+  state.runs = []
+  state.activeRun = null
+  state.agents = []
+  document.getElementById('run-detail').style.display = 'none'
+  document.getElementById('inspector').style.display = 'none'
+  renderRunHistory()
+  updateOnboardingVisibility()
 }
 
 function copyResumeCmd(cmd, btn) {
@@ -613,6 +649,10 @@ function renderTreeSimple() {
   if (!svg) return
 
   const W = svg.parentElement ? Math.max(svg.parentElement.clientWidth || 700, 400) : 700
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!renderTreeSimple._seen) renderTreeSimple._seen = new Set()
+  const prevSeen = renderTreeSimple._seen
+  const nextSeen = new Set()
 
   // ── Empty / loading states ────────────────────────────────────────────────
   if (!state.agents.length) {
@@ -773,19 +813,26 @@ function renderTreeSimple() {
 
   // ── Signal orbs ───────────────────────────────────────────────────────────
   phases.forEach((ph, pi) => {
-    if (pi === 0) return
+    if (pi === 0 || reducedMotion) return
     const prevPh = phases[pi-1]
     if (phaseStatus(ph) !== 'running' && phaseStatus(prevPh) !== 'running') return
-    const dur = (1.6 + pi * 0.2).toFixed(2)
-    const delay = ((pi - 1) * 0.35).toFixed(2)
-    // Lead orb
-    body += `<circle r="4.5" fill="#38BDF8" opacity="0.85">
-      <animateMotion dur="${dur}s" repeatCount="indefinite" begin="${delay}s"><mpath href="#sp-${pi}"/></animateMotion>
-    </circle>`
-    // Trailing orb (smaller, offset)
-    const trailDelay = (parseFloat(delay) + parseFloat(dur) * 0.45).toFixed(2)
-    body += `<circle r="2.5" fill="#7DD3FC" opacity="0.55">
-      <animateMotion dur="${dur}s" repeatCount="indefinite" begin="${trailDelay}s"><mpath href="#sp-${pi}"/></animateMotion>
+    const dur = (1.6 + pi * 0.18).toFixed(2)
+    const delay = ((pi - 1) * 0.3).toFixed(2)
+    const trailDelay = (parseFloat(delay) + parseFloat(dur) * 0.4).toFixed(2)
+    // Lead orb: eased path motion + breathing size + opacity pulse
+    body += `<circle r="4.5" fill="#38BDF8" opacity="0">
+      <animateMotion dur="${dur}s" repeatCount="indefinite" begin="${delay}s"
+        calcMode="spline" keyTimes="0;1" keySplines="0.4 0 0.6 1"><mpath href="#sp-${pi}"/></animateMotion>
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="${dur}s" repeatCount="indefinite" begin="${delay}s"
+        calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+      <animate attributeName="r" values="3.5;5.5;3.5" dur="${dur}s" repeatCount="indefinite" begin="${delay}s"
+        calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+    </circle>
+    <circle r="2.5" fill="#93C5FD" opacity="0">
+      <animateMotion dur="${dur}s" repeatCount="indefinite" begin="${trailDelay}s"
+        calcMode="spline" keyTimes="0;1" keySplines="0.4 0 0.6 1"><mpath href="#sp-${pi}"/></animateMotion>
+      <animate attributeName="opacity" values="0;0.5;0" dur="${dur}s" repeatCount="indefinite" begin="${trailDelay}s"
+        calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
     </circle>`
   })
 
@@ -807,16 +854,26 @@ function renderTreeSimple() {
     if (st === 'running') { nodeFill = 'rgba(245,158,11,0.20)'; nodeStroke = '#F59E0B';               labelFill = '#FDE68A'; strokeW = 2.5 }
     if (st === 'blocked') { nodeFill = 'rgba(239,68,68,0.10)';  nodeStroke = 'rgba(239,68,68,0.5)';  labelFill = '#FCA5A5' }
 
-    const pulseAnim = st === 'running'
-      ? `<animate attributeName="stroke-width" values="${strokeW};${strokeW + 1.5};${strokeW}" dur="1.6s" repeatCount="indefinite"/>
-         <animate attributeName="opacity" values="1;0.82;1" dur="1.6s" repeatCount="indefinite"/>`
+    const pulseAnim = (st === 'running' && !reducedMotion)
+      ? `<animate attributeName="stroke-width" values="${strokeW};${strokeW + 2};${strokeW}" dur="1.8s" repeatCount="indefinite"
+           calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+         <animate attributeName="opacity" values="1;0.7;1" dur="1.8s" repeatCount="indefinite"
+           calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`
       : ''
 
     const statusIcon = st === 'done' ? '✓' : st === 'running' ? '▸' : st === 'blocked' ? '✗' : st === 'skipped' ? '⊘' : '○'
     const statusColor = st === 'done' ? '#22C55E' : st === 'running' ? '#F59E0B' : st === 'blocked' ? '#EF4444' : st === 'skipped' ? '#64748B' : '#475569'
     const statusText = st === 'done' ? 'complete' : st === 'running' ? 'in progress' : st === 'blocked' ? 'blocked' : st === 'skipped' ? 'skipped' : 'pending'
 
-    body += `
+    const isNewPhase = !prevSeen.has('ph:' + ph)
+    nextSeen.add('ph:' + ph)
+    const phEnterDelay = (pi * 0.065).toFixed(3)
+    const phGroupAttrs = (!reducedMotion && isNewPhase) ? `opacity="0"` : ''
+    const phEnterAnim  = (!reducedMotion && isNewPhase)
+      ? `<animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="${phEnterDelay}s" fill="freeze"/>`
+      : ''
+    body += `<g ${phGroupAttrs}>
+      ${phEnterAnim}
       ${st === 'running' ? `<rect x="${nx - 4}" y="${ny - 4}" width="${PH_W + 8}" height="${PH_H + 8}" rx="15" fill="rgba(245,158,11,0.07)" stroke="rgba(245,158,11,0.18)" stroke-width="1"/>` : ''}
       <rect x="${nx}" y="${ny}" width="${PH_W}" height="${PH_H}" rx="12"
         fill="${nodeFill}" stroke="${nodeStroke}" stroke-width="${strokeW}"
@@ -826,7 +883,8 @@ function renderTreeSimple() {
         ${esc(ph)}</text>
       <text x="${cx}" y="${ny + 41}" text-anchor="middle"
         style="fill:${statusColor};font-family:system-ui,sans-serif;font-size:9px;font-weight:600;letter-spacing:0.04em">
-        ${statusIcon} ${statusText}</text>`
+        ${statusIcon} ${statusText}</text>
+    </g>`
 
     // Drop line + fan connectors from phase to each agent chip
     const dropY1 = ny + PH_H
@@ -879,9 +937,11 @@ function renderTreeSimple() {
                        : ast === 'blocked' ? 'rgba(239,68,68,0.4)'
                        : 'rgba(51,65,85,0.8)'
       const chipStrokeW = ast === 'running' ? 2 : 1
-      const chipAnim   = ast === 'running'
-        ? `<animate attributeName="stroke-width" values="2;3;2" dur="1.6s" repeatCount="indefinite"/>
-           <animate attributeName="opacity" values="1;0.82;1" dur="1.6s" repeatCount="indefinite"/>`
+      const chipAnim   = (ast === 'running' && !reducedMotion)
+        ? `<animate attributeName="stroke-width" values="2;3.2;2" dur="1.8s" repeatCount="indefinite"
+             calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+           <animate attributeName="opacity" values="1;0.72;1" dur="1.8s" repeatCount="indefinite"
+             calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>`
         : ''
 
       // Avatar — pixel art sprite if available, else colored circle with icon
@@ -915,9 +975,17 @@ function renderTreeSimple() {
       // Left accent bar
       const accentBarColor = ast === 'running' ? '#F59E0B' : ast === 'done' ? '#22C55E' : ast === 'blocked' ? '#EF4444' : '#334155'
 
+      const isNewAgent = !prevSeen.has('ag:' + ph + ':' + ag.agent)
+      nextSeen.add('ag:' + ph + ':' + ag.agent)
+      const agEnterDelay = (pi * 0.065 + 0.12 + ai * 0.045).toFixed(3)
+      const agGroupAttrs = (!reducedMotion && isNewAgent) ? `opacity="0"` : ''
+      const agEnterAnim  = (!reducedMotion && isNewAgent)
+        ? `<animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="${agEnterDelay}s" fill="freeze"/>`
+        : ''
       body += `
-        <g onclick="selectAgentByName('${esc(ag.agent)}')" style="cursor:pointer"
+        <g onclick="selectAgentByName('${esc(ag.agent)}')" ${agGroupAttrs} style="cursor:pointer"
            role="button" tabindex="0" aria-label="${esc(persona.display)} (${esc(ag.agent)}): ${esc(ast)}">
+          ${agEnterAnim}
           <title>${esc(tooltipFull)}</title>
           ${ast === 'running' ? `<rect x="${ax - 3}" y="${ay - 3}" width="${AG_W + 6}" height="${AG_H + 6}" rx="11" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.18)" stroke-width="1"/>` : ''}
           <rect x="${ax}" y="${ay}" width="${AG_W}" height="${AG_H}" rx="9"
@@ -942,6 +1010,7 @@ function renderTreeSimple() {
   })
 
   svg.innerHTML = defs + body
+  renderTreeSimple._seen = nextSeen
 }
 
 function renderRunSummaryCard(detail) {

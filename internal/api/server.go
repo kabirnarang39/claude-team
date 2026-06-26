@@ -51,6 +51,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/task", s.handleTask)
 	mux.HandleFunc("GET /api/runs", s.handleRuns)
 	mux.HandleFunc("GET /api/runs/{id}", s.handleRunDetail)
+	mux.HandleFunc("DELETE /api/runs/{id}", s.handleDeleteRun)
+	mux.HandleFunc("DELETE /api/runs", s.handleClearAllRuns)
 	mux.HandleFunc("GET /api/runs/{id}/files", s.handleRunFiles)
 	mux.HandleFunc("GET /api/runs/{id}/files/{filename}", s.handleRunFile)
 	mux.HandleFunc("GET /api/runs/{id}/files/{filename}/raw", s.handleRunFileRaw)
