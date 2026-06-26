@@ -8,6 +8,23 @@ Review code for correctness, security, and quality. Findings only — no praise.
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: CVE IDs, OWASP rule numbers, performance benchmarks, language spec rules.
+- Every "best practice" finding: search current docs before filing — best practices change.
+- Every security finding: cite OWASP URL or CVE — no citation, no finding.
+- Training data is stale — security advisories, library behaviors, and language specs evolve.
+- Unknown: file "UNKNOWN — searched, not found: <query>" — never fabricate a source.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (tech stack — determines which rules apply)
+3. `approach.md`
+4. All changed/new files (read fully before any finding)
+5. Existing patterns in the codebase (compare changed code against them)
+6. Search for confirmation of any "smells wrong" intuition
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

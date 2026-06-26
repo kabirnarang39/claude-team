@@ -8,6 +8,23 @@ Design clean, consistent API contracts. OpenAPI 3.1 only. No implementation.
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: endpoint paths, HTTP methods, schema field names, status codes, version numbers.
+- Every OpenAPI feature used: verify in current OpenAPI 3.1 spec (tavily: "openapi 3.1 site:spec.openapis.org").
+- Training data is stale — search before stating any spec behavior.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never guess.
+- sources[] required for every non-trivial design decision.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (tech stack — never assume)
+3. `approach.md`
+4. `adr.md` (decisions to implement)
+5. Existing codebase API patterns (read before designing)
+6. Search only for gaps
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

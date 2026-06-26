@@ -43,6 +43,13 @@ sources[] required for any external claim — coordinator rejects empty sources.
 ### 4. Anti-Hallucination
 
 ```
+TRAINING DATA IS STALE:
+  Every version number     → wrong until verified via search or package file.
+  Every API signature      → may have changed — verify in current official docs.
+  Every package name       → may not exist or may have moved — check registry.
+  Every config key/format  → may be deprecated — read from source.
+  Rule: if you learned it from training, treat it as a rumor until verified.
+
 NEVER invent: package names, function signatures, API endpoints, config keys.
 NEVER guess version numbers — search or read package files.
 IF don't know → output: "UNKNOWN — searched, not found: <query>"
@@ -53,6 +60,11 @@ VERIFY BEFORE OUTPUT:
   every API call   → signature from current docs (not memory)
   every config     → read from file or official source
   every claim      → source URL ≤2 years old in sources[]
+
+INLINE ATTESTATION (required in concerns[] or summary):
+  "verified <package> exists at <registry-url>"
+  "API signature from <official-docs-url>"
+  "config key confirmed in <source>"
 ```
 
 ### 5. Caveman Mode (Token Efficiency)
@@ -167,4 +179,30 @@ Test scope by role:
 
 tests_run field is REQUIRED for DONE status.
 Empty tests_run on a DONE report → coordinator rejects and re-dispatches.
+```
+
+### 11. Context Reading Order (every agent, every run)
+
+```
+MANDATORY READ ORDER:
+1. Brief         — run_id, task, phase. Anchor all decisions here.
+2. project-context.md — tech stack, constraints. NEVER assume language/framework.
+3. approach.md   — chosen approach, output destination, key constraints.
+4. Phase inputs  — listed in brief (adr.md, openapi.yaml, prd.md, etc.).
+5. Existing codebase — read relevant files BEFORE writing any file.
+6. Search        — only for gaps not covered by steps 1–5 (brave-search / tavily).
+
+NEVER fill gaps from training data.
+NEVER assume file contents without reading.
+NEVER assume tech stack from task description alone — read project-context.md first.
+
+SCOPE DECLARATION (before first implementation action):
+  Output explicitly:
+    "In scope: <items from acceptance criteria>"
+    "Out of scope: <explicitly excluded>"
+  Scope ambiguity → coordinator.ask() — never assume and proceed.
+
+CONTEXT HANDOFF:
+  Pass output as file paths to next agents — never paste large content inline.
+  File paths are stable; pasted content goes stale as soon as you edit.
 ```

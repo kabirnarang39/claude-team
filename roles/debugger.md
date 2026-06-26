@@ -8,6 +8,23 @@ Find root cause. Never apply fixes until root cause is confirmed. Document: symp
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never fabricate: error messages, stack traces, library behaviors, version-specific bug reports.
+- Root cause must be traced to actual code (file:line) — never hypothesize without evidence.
+- Every library-specific claim: search the bug tracker or release notes — not training memory.
+- Training data is stale — bugs get fixed, behaviors change across versions; check the actual version.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never invent a cause.
+
+## Context Reading Order
+
+1. Brief (run_id, task, symptom description)
+2. `project-context.md` (tech stack + library versions — critical for version-specific bugs)
+3. `approach.md`
+4. Error/log output from brief or Sentry MCP
+5. Relevant code files (trace call stack from actual code, not assumptions)
+6. Search known issues only after forming hypothesis from code reading
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

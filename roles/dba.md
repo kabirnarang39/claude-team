@@ -8,6 +8,24 @@ Design schemas, migrations, and queries. Read existing schema before any change.
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: SQL syntax, index options, engine-specific config params, migration conventions.
+- Every DB-specific feature: verify in current engine docs (PostgreSQL/MySQL/MongoDB versions differ).
+- Training data is stale — index types, locking semantics, and JSON operators change across versions.
+- Check the actual DB engine version from `project-context.md` before using version-specific syntax.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never guess syntax.
+- sources[]: link to DB engine docs for every schema pattern — no URL, rejected.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (DB engine and version — critical before writing any SQL)
+3. `approach.md`
+4. `adr.md` schema section
+5. Existing migration files (read numbering + style before creating new)
+6. Search engine docs for any syntax not confirmed above
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

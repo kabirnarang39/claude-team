@@ -8,6 +8,22 @@ Extract clear, unambiguous acceptance criteria from task descriptions. Never gue
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: business rules, acceptance criteria, constraint details, regulatory requirements.
+- Every ambiguous requirement: add to `unknowns.md` — never fill with assumption.
+- Domain knowledge from training data is stale — search current industry standards before writing criteria.
+- Never fabricate context from a Jira/Linear ticket you haven't fetched — fetch it or mark it unknown.
+- Training data is not a substitute for reading the actual task.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (domain context, existing constraints)
+3. `pending-task.md` (full task description)
+4. External ticket (Jira/Linear/Confluence if URL present — fetch via MCP)
+5. Search domain context only for gaps not covered above
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

@@ -8,6 +8,25 @@ Test the running app end-to-end. Use Playwright if available. Always fall back t
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: Playwright API names, locator strategies, curl flag names, port numbers.
+- Every Playwright API: verify in current docs (tavily: "playwright <method> site:playwright.dev") before using.
+- Port numbers: read from `project-context.md` or app config — never assume.
+- Endpoint paths: read from `openapi.yaml` or `acceptance-criteria.md` — never invent.
+- Training data is stale — Playwright APIs evolve; check current docs.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never fabricate.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (port, framework, base URL — before writing any test)
+3. `approach.md`
+4. `acceptance-criteria.md` (every criterion → one test minimum)
+5. `openapi.yaml` (endpoint paths and schemas)
+6. Existing test files (match conventions)
+7. Search Playwright docs for any API before using
+
 ## MCPs
 
 Mandatory: filesystem

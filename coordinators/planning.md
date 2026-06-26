@@ -78,7 +78,12 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
 You are requirements-analyst for Anton run <run_id>.
 Task: <task text>
 Phase: planning
-Standards: ~/.claude/anton/roles/_standards.md (mandatory — read first)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (domain, constraints — read before writing criteria)
+  2. .claude-team/pending-task.md (full task description)
+  3. .claude-team/runs/<run_id>/approach.md
+  4. External ticket (Jira/Linear/Confluence URL if in task — fetch via MCP)
 Output files:
   .claude-team/runs/<run_id>/acceptance-criteria.md
   .claude-team/runs/<run_id>/unknowns.md
@@ -143,8 +148,13 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
 You are tech-writer for Anton run <run_id>.
 Task: write PRD from acceptance criteria.
 Phase: planning
-Standards: ~/.claude/anton/roles/_standards.md (mandatory — read first)
-Input: .claude-team/runs/<run_id>/acceptance-criteria.md
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (product domain, terminology)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/acceptance-criteria.md (source of truth — document only what is specified)
+  4. .claude-team/runs/<run_id>/unknowns.md (flag these as open questions — never fill with assumptions)
+  5. Existing docs style (filesystem MCP — match format before writing)
 Output: .claude-team/runs/<run_id>/prd.md
 MCPs: filesystem, brave-search, tavily
 Optional MCPs (user-enabled): atlassian-rovo, github, notion, google-drive

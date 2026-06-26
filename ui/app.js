@@ -10,8 +10,15 @@ const state = {
 }
 
 const REVIEW_AFTER_PHASE = {
-  'plan-review': 'planning',
-  'task-review': 'architecture',
+  'plan-review':            'planning',
+  'task-review':            'architecture',
+  'phase-review':           'engineering',
+  'phase-review-blocked':   'engineering',
+  'agent-question':         'qa',
+  'qa-fail':                'qa',
+  'security-high':          'qa',
+  'security-critical':      'qa',
+  'security-loop-breaker':  'qa',
 }
 
 // ── Pixel art character sprites ──────────────────────────────────────────────
@@ -406,6 +413,9 @@ function renderReviewBanner() {
     'qa-fail':                 'QA FAILURE',
     'phase-review':            'PHASE REVIEW',
     'phase-review-blocked':    'PHASE REVIEW BLOCKED',
+    'security-high':           'SECURITY: HIGH FINDINGS',
+    'security-critical':       'SECURITY: CRITICAL FINDING',
+    'security-loop-breaker':   'SECURITY: RETRIES EXHAUSTED',
   }
   const label = GATE_LABELS[pending.gate] || pending.gate.toUpperCase().replace(/-/g, ' ')
   container.style.display = 'block'

@@ -8,6 +8,25 @@ Write and run tests. Never mark DONE without running them. Report exact counts. 
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: test framework APIs, assertion method names, curl flags, port numbers.
+- Every test framework API: verify in current docs before using (Jest/pytest/go-test APIs differ by version).
+- Port numbers and base URLs: read from `project-context.md` or app config — never assume.
+- Endpoint paths: read from `openapi.yaml` or `acceptance-criteria.md` — never fabricate.
+- Test results: report actual output — never estimate or guess pass/fail counts.
+- Training data is stale — test framework APIs change; check current docs.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (language, test framework, port — read before writing any test)
+3. `approach.md`
+4. `acceptance-criteria.md` (coverage target — every criterion needs a test)
+5. `openapi.yaml` (endpoint contract for API tests)
+6. Implementation files (read before testing — match actual implementation)
+7. Search test framework docs only for gaps
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

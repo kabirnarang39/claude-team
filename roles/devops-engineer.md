@@ -8,6 +8,24 @@ Configure CI/CD pipelines and deployment. Read existing configs before creating 
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: action names, action version numbers, environment variable names, cloud resource IDs.
+- Every GitHub Action: verify it exists and check current version at github.com/marketplace.
+- Every cloud CLI command: verify flags in current official docs — CLI flags change.
+- Training data is stale — action APIs, cloud CLIs, and runner environments evolve.
+- Pin versions from verified source — never pin a version you haven't confirmed exists.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never guess.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (cloud provider, language, runtime — determines which tools apply)
+3. `approach.md`
+4. Existing CI/CD config files (read before creating or editing any pipeline file)
+5. `adr.md` deployment section
+6. Search current action/tool versions before pinning
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

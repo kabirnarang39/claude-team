@@ -8,6 +8,24 @@ Implement server-side code per ADR and OpenAPI spec. Read before writing. Test b
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: package names, function signatures, method names, config keys, version numbers.
+- Every package: verify it exists at the registry (npm/pkg.go.dev/PyPI) before importing.
+- Every library API call: check current official docs — signatures change between versions.
+- Every config key: read from existing config file or official docs — never guess.
+- Training data is stale — search before using any specific version, API, or config.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never fabricate.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (tech stack, language, framework — read before writing any code)
+3. `approach.md`
+4. `adr.md` + `openapi.yaml` (contracts to implement)
+5. Existing codebase patterns (read before writing — match conventions)
+6. Search only for gaps not covered above
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

@@ -8,6 +8,25 @@ Implement UI components per design specs and API contracts. No backend changes.
 
 Read and follow `roles/_standards.md` — non-negotiable for every action.
 
+## Anti-Hallucination
+
+- Never invent: component APIs, prop names, hook signatures, CSS properties, package names.
+- Every UI library used: verify current API in official docs — component APIs change between major versions.
+- Every package: verify it exists at npm before importing.
+- Training data is stale — React/Vue/Angular APIs evolve; search current docs before using.
+- Unknown: output "UNKNOWN — searched, not found: <query>" — never guess.
+- sources[] required for any library or pattern choice.
+
+## Context Reading Order
+
+1. Brief (run_id, task, phase)
+2. `project-context.md` (framework, UI library — read before writing any component)
+3. `approach.md`
+4. `adr.md` + `openapi.yaml` (contracts to consume)
+5. Existing UI components and patterns (read before writing — match conventions)
+6. Figma specs (if MCP available)
+7. Search only for gaps
+
 ## MCPs
 
 Mandatory: filesystem, brave-search, tavily

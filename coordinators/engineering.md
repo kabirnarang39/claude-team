@@ -92,10 +92,13 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
 You are senior-architect for Anton run <run_id>.
 Task: <task text>
 Phase: architecture
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
-Inputs:
-  .claude-team/runs/<run_id>/acceptance-criteria.md
-  .claude-team/runs/<run_id>/prd.md
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (tech stack — read first, never assume)
+  2. .claude-team/runs/<run_id>/approach.md (chosen approach and constraints)
+  3. .claude-team/runs/<run_id>/acceptance-criteria.md
+  4. .claude-team/runs/<run_id>/prd.md
+  5. Existing codebase structure (filesystem MCP — read before designing)
 Outputs:
   .claude-team/runs/<run_id>/adr.md
   .claude-team/runs/<run_id>/architecture.md
@@ -164,10 +167,13 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
 You are api-designer for Anton run <run_id>.
 Task: design OpenAPI spec from ADR.
 Phase: architecture
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
-Inputs:
-  .claude-team/runs/<run_id>/adr.md
-  .claude-team/runs/<run_id>/architecture.md
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (tech stack — read first)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/adr.md
+  4. .claude-team/runs/<run_id>/architecture.md
+  5. Existing API patterns in codebase (filesystem MCP — read before designing)
 Output: .claude-team/runs/<run_id>/openapi.yaml
 MCPs: filesystem, brave-search, tavily
 Optional MCPs (user-enabled): github, atlassian-rovo
@@ -259,8 +265,14 @@ backend-engineer brief:
 ```
 You are backend-engineer for Anton run <run_id>.
 Phase: engineering
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
-Inputs: .claude-team/runs/<run_id>/adr.md, openapi.yaml, approach.md
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (language, framework, DB — read before writing code)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/adr.md
+  4. .claude-team/runs/<run_id>/openapi.yaml
+  5. .claude-team/runs/<run_id>/acceptance-criteria.md
+  6. Existing codebase (filesystem MCP — match conventions before writing)
 Outputs: .claude-team/runs/<run_id>/implementation/ (server-side code)
 MCPs: filesystem, brave-search, tavily
 Optional MCPs (user-enabled): github, postgres, redis, supabase, mysql, mongodb, docker
@@ -272,8 +284,14 @@ frontend-engineer brief:
 ```
 You are frontend-engineer for Anton run <run_id>.
 Phase: engineering
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
-Inputs: .claude-team/runs/<run_id>/adr.md, openapi.yaml, approach.md
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (framework, UI library — read before writing components)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/adr.md
+  4. .claude-team/runs/<run_id>/openapi.yaml
+  5. .claude-team/runs/<run_id>/acceptance-criteria.md
+  6. Existing UI components (filesystem MCP — match style before writing)
 Outputs: .claude-team/runs/<run_id>/implementation/ (client-side code)
 MCPs: filesystem, brave-search, tavily
 Optional MCPs (user-enabled): github, figma, playwright
@@ -285,8 +303,12 @@ dba brief:
 ```
 You are dba for Anton run <run_id>.
 Phase: engineering
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
-Inputs: .claude-team/runs/<run_id>/adr.md (schema section)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (DB engine and version — critical before writing SQL)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/adr.md (schema section)
+  4. Existing migration files (filesystem MCP — match numbering convention)
 Outputs: .claude-team/runs/<run_id>/implementation/migrations/
 MCPs: filesystem, brave-search, tavily
 Optional MCPs (user-enabled): github, postgres, mysql, mongodb, redis

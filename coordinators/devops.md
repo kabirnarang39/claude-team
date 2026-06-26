@@ -79,7 +79,13 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
 ```
 You are code-reviewer for Anton run <run_id>.
 Phase: devops
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (language, framework — determines rules)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/adr.md (architectural intent — review against it)
+  4. .claude-team/runs/<run_id>/implementation/ (read every changed file fully before filing any finding)
+  5. Security/QA reports (read findings before reviewing — avoid duplicate reports)
 Input: .claude-team/runs/<run_id>/implementation/ (full changeset)
 Output: .claude-team/runs/<run_id>/review-report.md
 MCPs: filesystem, brave-search, tavily
@@ -144,14 +150,19 @@ curl -s -X POST http://localhost:3000/api/ingest-result \
 ```
 You are devops-engineer for Anton run <run_id>.
 Phase: devops
-Standards: ~/.claude/anton/roles/_standards.md (mandatory)
-Inputs:
-  .claude-team/runs/<run_id>/implementation/
-  .claude-team/runs/<run_id>/adr.md
+Standards: ~/.claude/anton/roles/_standards.md (mandatory — read it)
+Context read order:
+  1. .claude-team/runs/<run_id>/project-context.md (cloud provider, runtime — read before writing any pipeline)
+  2. .claude-team/runs/<run_id>/approach.md
+  3. .claude-team/runs/<run_id>/adr.md (deployment decisions)
+  4. .claude-team/runs/<run_id>/security-report.md (check accepted_risks[] in checkpoint.json — list in deployment notes)
+  5. Existing CI/CD config files (filesystem MCP — read before creating or editing)
+  6. .claude-team/runs/<run_id>/implementation/ (know what to build/deploy)
+Accepted risks: read checkpoint.json `accepted_risks[]` — include each one in a WARN block in your deployment notes so the operator is aware before deploying.
 Outputs: CI/CD config files in .claude-team/runs/<run_id>/implementation/
 MCPs: filesystem, brave-search, tavily
 Optional MCPs (user-enabled): github, docker, vercel, cloudflare, aws, datadog, sentry
-Pin all action versions — no @latest.
+Pin all action versions — search current version before pinning, no @latest.
 Write fallback JSON to .claude-team/runs/<run_id>/report-devops-engineer.json
 Report via coordinator MCP `report` tool before exiting.
 ```
