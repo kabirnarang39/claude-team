@@ -400,10 +400,12 @@ function renderReviewBanner() {
     return
   }
   const GATE_LABELS = {
-    'plan-review': 'PLAN REVIEW',
-    'task-review': 'TASK REVIEW',
-    'agent-question': 'AGENT QUESTION',
-    'qa-fail': 'QA FAILURE',
+    'plan-review':             'PLAN REVIEW',
+    'task-review':             'TASK REVIEW',
+    'agent-question':          'AGENT QUESTION',
+    'qa-fail':                 'QA FAILURE',
+    'phase-review':            'PHASE REVIEW',
+    'phase-review-blocked':    'PHASE REVIEW BLOCKED',
   }
   const label = GATE_LABELS[pending.gate] || pending.gate.toUpperCase().replace(/-/g, ' ')
   container.style.display = 'block'
@@ -646,7 +648,7 @@ function renderTreeSimple() {
     const ag = phaseMap[ph] || []
     if (ag.some(a => a.status === 'blocked')) return 'blocked'
     if (ag.some(a => a.status === 'running')) return 'running'
-    if (ag.every(a => a.status === 'done' || a.status === 'done_with_concerns')) return 'done'
+    if (ag.every(a => a.status === 'done' || a.status === 'done_with_concerns' || a.status === 'skipped')) return 'done'
     return 'pending'
   }
 
@@ -793,9 +795,9 @@ function renderTreeSimple() {
          <animate attributeName="opacity" values="1;0.82;1" dur="1.6s" repeatCount="indefinite"/>`
       : ''
 
-    const statusIcon = st === 'done' ? '✓' : st === 'running' ? '▸' : st === 'blocked' ? '✗' : '○'
-    const statusColor = st === 'done' ? '#22C55E' : st === 'running' ? '#F59E0B' : st === 'blocked' ? '#EF4444' : '#475569'
-    const statusText = st === 'done' ? 'complete' : st === 'running' ? 'in progress' : st === 'blocked' ? 'blocked' : 'pending'
+    const statusIcon = st === 'done' ? '✓' : st === 'running' ? '▸' : st === 'blocked' ? '✗' : st === 'skipped' ? '⊘' : '○'
+    const statusColor = st === 'done' ? '#22C55E' : st === 'running' ? '#F59E0B' : st === 'blocked' ? '#EF4444' : st === 'skipped' ? '#64748B' : '#475569'
+    const statusText = st === 'done' ? 'complete' : st === 'running' ? 'in progress' : st === 'blocked' ? 'blocked' : st === 'skipped' ? 'skipped' : 'pending'
 
     body += `
       ${st === 'running' ? `<rect x="${nx - 4}" y="${ny - 4}" width="${PH_W + 8}" height="${PH_H + 8}" rx="15" fill="rgba(245,158,11,0.07)" stroke="rgba(245,158,11,0.18)" stroke-width="1"/>` : ''}
@@ -881,8 +883,8 @@ function renderTreeSimple() {
              ${esc(persona.icon)}</text>`
 
       // Status meta row
-      const statusDot   = ast === 'done' ? '#22C55E' : ast === 'running' ? '#F59E0B' : ast === 'blocked' ? '#EF4444' : '#475569'
-      const statusGlyph = ast === 'done' ? '✓' : ast === 'running' ? '▸' : ast === 'blocked' ? '✗' : ast === 'done_with_concerns' ? '!' : '○'
+      const statusDot   = ast === 'done' ? '#22C55E' : ast === 'running' ? '#F59E0B' : ast === 'blocked' ? '#EF4444' : ast === 'skipped' ? '#64748B' : '#475569'
+      const statusGlyph = ast === 'done' ? '✓' : ast === 'running' ? '▸' : ast === 'blocked' ? '✗' : ast === 'done_with_concerns' ? '!' : ast === 'skipped' ? '⊘' : '○'
       const metaText    = ag.tokens > 0 ? fmtK(ag.tokens) + ' tok' : (ast === 'done' ? 'done' : ast)
 
       // One-liner summary (first sentence, max 36 chars)

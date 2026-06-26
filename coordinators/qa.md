@@ -17,6 +17,29 @@ If security-reviewer reports status DONE_WITH_CONCERNS with summary containing "
 
 ---
 
+## Reading Agent Plan
+
+Before dispatching any agent, read the agent plan written by main coordinator:
+
+```bash
+cat .claude-team/runs/<run_id>/agent-plan.json 2>/dev/null
+```
+
+If the file exists and `qa.agents` is a non-null list: only dispatch agents in that list.
+If the file is missing or `qa.agents` is absent/null: run all agents (default behaviour).
+
+**Never skip `security-reviewer` regardless of plan** — security audit is always required.
+
+For each agent in this phase that is **not** in `qa.agents`:
+1. Signal dashboard:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/ingest-result \
+     -H "Content-Type: application/json" \
+     -d "{\"run_id\":\"<run_id>\",\"phase\":\"qa\",\"agent\":\"<agent>\",\"status\":\"SKIPPED\",\"summary\":\"Not required: <reason from plan.skipped or 'see agent-plan.json'>\"}"
+   ```
+2. Call `TaskUpdate`: `{ taskId: "<agent-task-id>", status: "completed" }` immediately.
+3. Skip that agent's entire dispatch section below.
+
 ## Phase Entry: Agent Checklist and Resume Check
 
 On entry (before dispatching any agent):
@@ -39,7 +62,7 @@ Store returned task IDs for TaskUpdate calls below.
 
 ## Dispatch: qa-engineer
 
-**Skip this section entirely if `qa-engineer` is in `checkpoint.completed_agents.qa`.**
+**Skip this section entirely if `qa-engineer` is in `checkpoint.completed_agents.qa` OR not in `agent-plan.qa.agents` (when plan exists — signal SKIPPED first).**
 
 ### Before dispatch
 - Write checkpoint.json — set `current_phase: "qa"`, ensure `completed_agents.qa` exists:
@@ -132,7 +155,7 @@ Read the agent report. If `status == "BLOCKED"`, `questions[]` is non-empty, or 
 
 After qa-engineer DONE (or skipped on resume).
 
-**Skip this section entirely if `security-reviewer` is in `checkpoint.completed_agents.qa`.**
+**Skip this section entirely if `security-reviewer` is in `checkpoint.completed_agents.qa`. Never skip due to agent plan — security review is always required.**
 
 ### Before dispatch
 
@@ -226,7 +249,7 @@ Note: On resume after a security critical halt, user must explicitly confirm the
 
 After security-reviewer passes (no CRITICAL), or skipped on resume.
 
-**Skip this section entirely if `e2e-tester` is in `checkpoint.completed_agents.qa`.**
+**Skip this section entirely if `e2e-tester` is in `checkpoint.completed_agents.qa` OR not in `agent-plan.qa.agents` (when plan exists — signal SKIPPED first).**
 
 ### Before dispatch
 
@@ -277,3 +300,167 @@ fi
       json.dump(ck, f, indent=2)
   "
   ```
+
+## Phase Review Gate
+
+Run after all QA agents complete, before reporting DONE to main coordinator.
+
+Note: this gate reviews QA phase output completeness. Cross-phase failures (QA rejecting engineering output) are handled by main coordinator's QA→Engineering feedback loop.
+
+### Circuit breaker
+
+```bash
+python3 -c "
+import json
+with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+    ck = json.load(f)
+print(ck.get('phase_review_retries', {}).get('qa', 0))
+"
+```
+
+**Max retries: 2.** If count >= 2: skip re-dispatch, go directly to Human Question Gate.
+
+### Checklist
+
+Read output files and verify ALL of the following:
+
+**qa-report.md:**
+- [ ] File exists and is non-empty
+- [ ] Each acceptance criterion from `acceptance-criteria.md` has a PASS or FAIL verdict
+- [ ] No criterion left without a verdict
+- [ ] All FAIL verdicts have a specific description (not "failed" alone)
+- [ ] `tests_run` documented: exact command + passing count
+
+**security-report.md:**
+- [ ] File exists and is non-empty
+- [ ] OWASP checklist present
+- [ ] Every finding cites OWASP URL or CVE ID
+- [ ] No CRITICAL findings without human approval (if any exist: trigger Human Question Gate regardless of retry count)
+
+**e2e tests (if e2e-tester ran):**
+- [ ] Test files present in `implementation/tests/e2e/` or `api-tests.sh` exists as fallback
+- [ ] At least one test covers the primary user flow from acceptance criteria
+
+Failing agent mapping:
+- qa-report.md incomplete → re-dispatch `qa-engineer`
+- security-report.md incomplete or missing citations → re-dispatch `security-reviewer`
+- e2e tests missing → re-dispatch `e2e-tester`
+
+### On failure
+
+1. Identify failing file and responsible agent.
+2. Check circuit breaker count. If >= 2: go to Human Question Gate.
+3. Increment retry counter:
+   ```bash
+   python3 -c "
+   import json
+   with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json') as f:
+       ck = json.load(f)
+   pr = ck.setdefault('phase_review_retries', {})
+   pr['qa'] = pr.get('qa', 0) + 1
+   with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+       json.dump(ck, f, indent=2)
+   "
+   ```
+4. Signal dashboard:
+   ```bash
+   curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+     -H "Content-Type: application/json" \
+     -d "{\"gate\":\"phase-review\",\"summary\":\"qa review fail (retry <N>): <criterion that failed, ≤150 chars>\"}"
+   ```
+5. Re-dispatch failing agent:
+   ```
+   Phase review found issue with your output.
+   Criterion failed: <exact criterion>
+   Fix required: <specific correction>
+   Re-read your output file, fix it, re-report DONE.
+   ```
+6. After agent re-submits: re-run checklist from top.
+
+### Human Question Gate (retries exhausted, BLOCKED, or CRITICAL security finding)
+
+```bash
+curl -s -X POST http://localhost:3000/api/runs/<run_id>/signal-review \
+  -H "Content-Type: application/json" \
+  -d "{\"gate\":\"phase-review-blocked\",\"summary\":\"qa review: <retry N or BLOCKED or CRITICAL> — human input needed\"}"
+```
+
+Use `AskUserQuestion` — present: what failed / the CRITICAL finding, options:
+1. Fix and retry (bypass circuit breaker once for non-CRITICAL; for CRITICAL, always require fix)
+2. Proceed anyway — accept documented risk (only for non-CRITICAL findings)
+3. Abort run
+
+Resolve dashboard gate:
+```bash
+curl -s -X POST http://localhost:3000/api/runs/<run_id>/resolve-review \
+  -H "Content-Type: application/json" \
+  -d "{\"gate\":\"phase-review-blocked\",\"status\":\"<approved|rejected>\",\"feedback\":\"<user answer>\"}"
+```
+
+### Token Reconciliation
+
+Before reporting DONE, patch `tokens_used: 0` in any report by reading actual usage from JSONL transcripts. Replace `ACTUAL_RUN_ID` with the real run_id.
+
+```bash
+python3 << 'PYEOF'
+import json, glob, os
+
+RUN_ID = "ACTUAL_RUN_ID"
+cwd = os.getcwd()
+session_id = os.environ.get('CLAUDE_CODE_SESSION_ID', '')
+subagents_dir = os.path.expanduser(
+    '~/.claude/projects/' + cwd.replace('/', '-') + '/' + session_id + '/subagents'
+)
+roles = [
+    'senior-architect', 'api-designer', 'backend-engineer', 'frontend-engineer', 'dba',
+    'requirements-analyst', 'tech-writer', 'qa-engineer', 'security-reviewer', 'e2e-tester',
+    'code-reviewer', 'devops-engineer',
+]
+for path in glob.glob(os.path.join(subagents_dir, 'agent-*.jsonl')):
+    try:
+        with open(path) as f:
+            lines = f.readlines()
+        if not lines:
+            continue
+        brief = str(json.loads(lines[0]).get('message', {}).get('content', ''))
+        if RUN_ID not in brief:
+            continue
+        name = next((r for r in roles if 'You are ' + r in brief), None)
+        if not name:
+            continue
+        report = '.claude-team/runs/' + RUN_ID + '/report-' + name + '.json'
+        if not os.path.exists(report):
+            continue
+        with open(report) as f:
+            data = json.load(f)
+        if data.get('tokens_used', 0) != 0:
+            continue
+        total = 0
+        for line in lines:
+            try:
+                u = json.loads(line).get('message', {}).get('usage', {})
+                total += u.get('input_tokens', 0) + u.get('output_tokens', 0)
+            except:
+                pass
+        if total > 0:
+            data['tokens_used'] = total
+            with open(report, 'w') as f:
+                json.dump(data, f, indent=2)
+            print(name + ': ' + str(total) + ' tokens patched')
+    except:
+        pass
+PYEOF
+```
+
+Re-ingest patched reports:
+```bash
+for role in qa-engineer security-reviewer e2e-tester; do
+  f=".claude-team/runs/<run_id>/report-$role.json"
+  [ -f "$f" ] && curl -s -X POST http://localhost:3000/api/ingest-result \
+    -H "Content-Type: application/json" -d @"$f" > /dev/null
+done
+```
+
+### On pass
+
+Report DONE to main coordinator. All checklist items satisfied, no unresolved CRITICAL findings.

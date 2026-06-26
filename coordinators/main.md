@@ -254,6 +254,69 @@ Approach file: .claude-team/runs/<run_id>/approach.md (read for full context)
 
 **Word/DOCX requests:** If user asks for Word export during clarification, respond: "Word export not supported in v2 — writing to Confluence and local MD instead."
 
+## Step: Agent Planning
+
+Run this step immediately after writing `approach.md`, before dispatching any sub-coordinator.
+
+Using the task description, `project-context.md`, and the chosen approach, evaluate every agent listed in each workflow phase and decide which are actually needed.
+
+### Skip rules
+
+| Agent | Skip when |
+|-------|-----------|
+| `frontend-engineer` | No UI or client-side changes |
+| `dba` | No schema changes, migrations, or new queries |
+| `api-designer` | No new external API surface; internal refactor only |
+| `mobile-engineer` | No mobile app in scope |
+| `tech-writer` | Phase output is code only, no documentation needed |
+| `e2e-tester` | No user-facing flows; pure backend or library change |
+| `devops-engineer` | No deployment config, infra, or CI/CD changes |
+| `performance-engineer` | Not a performance investigation; no hot-path changes |
+
+### Never skip
+- `senior-architect` when present on architecture phase
+- `security-reviewer` on any QA phase
+- `code-reviewer` on any DevOps phase
+- Any agent that is the sole agent in its phase
+
+### Write agent-plan.json
+
+```bash
+python3 -c "
+import json
+# Replace agent lists and skipped reasons based on your analysis of the task
+plan = {
+  'PHASE_ID': {
+    'agents': ['agent-a', 'agent-b'],
+    'skipped': {
+      'agent-c': 'one-line reason why not needed'
+    }
+  }
+}
+with open('.claude-team/runs/ACTUAL_RUN_ID/agent-plan.json', 'w') as f:
+    json.dump(plan, f, indent=2)
+"
+```
+
+Only include phases that exist in the current workflow. Omit the `skipped` key for a phase if nothing is skipped.
+
+### Print plan to user
+
+```
+── AGENT PLAN ──────────────────────────────────────────────────────────────
+<phase>: <agent1>, <agent2>  [SKIPPED: <agent3> — <reason>]
+<phase>: <agent1>
+────────────────────────────────────────────────────────────────────────────
+```
+
+### Propagate to sub-coordinators
+
+Add this line to every sub-coordinator brief:
+
+```
+Agent plan: .claude-team/runs/<run_id>/agent-plan.json
+```
+
 ## Dispatching Sub-Coordinators
 
 For each phase in the workflow `phases:` list, in order:
