@@ -493,7 +493,11 @@ async function loadRunDetail(runId) {
     }
 
     // Show inspector
-    document.getElementById('inspector').style.display = 'flex'
+    const insp = document.getElementById('inspector')
+    insp.style.display = 'flex'
+    insp.classList.remove('inspector-reveal')
+    void insp.offsetWidth
+    insp.classList.add('inspector-reveal')
 
     // New: load orchestration card and phase outputs
     await renderOrchestrationCard(runId)
@@ -534,6 +538,9 @@ function renderRunHistory() {
         <div class="ri-meta">${wfBadge}<span class="ri-time">${fmtTime(r.started_at)}</span></div>
       </div>`
   }).join('')
+  el.querySelectorAll('.run-item').forEach((item, i) => {
+    item.style.setProperty('--i', Math.min(i, 5))
+  })
 }
 
 function openResumeModal(runId) {

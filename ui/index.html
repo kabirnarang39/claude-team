@@ -15,7 +15,7 @@
 
   <!-- Offline banner -->
   <div id="offline-banner" class="offline-banner" style="display:none">
-    Server offline — start Anton with <code>anton</code> then refresh
+    Server offline. Start Anton with <code>anton</code> then refresh.
   </div>
 
   <!-- Header: 52px -->
@@ -57,16 +57,13 @@
           <!-- Glow orb -->
           <div class="ob-glow-orb"></div>
 
-          <!-- Badge + hero -->
-          <div class="ob-eyebrow">
-            <span class="ob-badge">Multi-agent AI engineering</span>
-          </div>
+          <!-- Hero -->
           <div class="ob-hero">
             <div class="ob-logo-mark">⚡</div>
             <div class="ob-wordmark">Anton</div>
           </div>
           <h2 class="ob-title">Your Claude Code just got<br>a team of 11 specialists.</h2>
-          <p class="ob-sub">One slash command. A full engineering team — planner, architect, three engineers, QA, security, DevOps — fires up and works in parallel. You watch them live.</p>
+          <p class="ob-sub">One slash command fires a full engineering team in parallel: planner, architect, three engineers, QA, security, DevOps. You watch them live.</p>
 
           <!-- Terminal command box -->
           <div class="ob-terminal">
@@ -79,7 +76,7 @@
             <div class="ob-terminal-body">
               <span class="ob-prompt">›</span>
               <span class="ob-cmd">/team-dispatch</span>
-              <span class="ob-cmd-arg"> build Stripe billing with usage metering</span>
+              <span class="ob-cmd-arg"> build Stripe billing with usage metering</span><span class="ob-cursor">▋</span>
             </div>
             <div class="ob-terminal-output">
               <span class="ob-out-dim">⚡ Anton dispatching 11 specialists across 5 phases…</span>
@@ -88,15 +85,15 @@
 
           <!-- Pipeline visual -->
           <div class="ob-pipeline">
-            <div class="ob-phase ob-phase-plan">
+            <div class="ob-phase ob-phase-plan" style="--phase-i:0">
               <div class="ob-phase-label">Planning</div>
               <div class="ob-agents">
                 <div class="ob-agent"><span class="ob-agent-icon">◈</span>Tyrion</div>
                 <div class="ob-agent"><span class="ob-agent-icon">⊕</span>Samwell</div>
               </div>
             </div>
-            <div class="ob-phase-arrow">→</div>
-            <div class="ob-phase ob-phase-eng">
+            <div class="ob-phase-arrow" style="--arrow-i:0">→</div>
+            <div class="ob-phase ob-phase-eng" style="--phase-i:1">
               <div class="ob-phase-label">Engineering</div>
               <div class="ob-agents">
                 <div class="ob-agent"><span class="ob-agent-icon">△</span>Bran</div>
@@ -104,16 +101,16 @@
                 <div class="ob-agent ob-agent-more">+4 more</div>
               </div>
             </div>
-            <div class="ob-phase-arrow">→</div>
-            <div class="ob-phase ob-phase-qa">
+            <div class="ob-phase-arrow" style="--arrow-i:1">→</div>
+            <div class="ob-phase ob-phase-qa" style="--phase-i:2">
               <div class="ob-phase-label">QA</div>
               <div class="ob-agents">
                 <div class="ob-agent"><span class="ob-agent-icon">✦</span>Arya</div>
                 <div class="ob-agent"><span class="ob-agent-icon">⬡</span>Jon Snow</div>
               </div>
             </div>
-            <div class="ob-phase-arrow">→</div>
-            <div class="ob-phase ob-phase-ops">
+            <div class="ob-phase-arrow" style="--arrow-i:2">→</div>
+            <div class="ob-phase ob-phase-ops" style="--phase-i:3">
               <div class="ob-phase-label">DevOps</div>
               <div class="ob-agents">
                 <div class="ob-agent"><span class="ob-agent-icon">⬢</span>Eddard</div>
@@ -122,33 +119,9 @@
             </div>
           </div>
 
-          <!-- Stats row -->
-          <div class="ob-stats-row">
-            <div class="ob-stat">
-              <div class="ob-stat-num">11</div>
-              <div class="ob-stat-label">Specialists</div>
-            </div>
-            <div class="ob-stat-div"></div>
-            <div class="ob-stat">
-              <div class="ob-stat-num">5</div>
-              <div class="ob-stat-label">Workflows</div>
-            </div>
-            <div class="ob-stat-div"></div>
-            <div class="ob-stat">
-              <div class="ob-stat-num">3×</div>
-              <div class="ob-stat-label">Parallel speedup</div>
-            </div>
-            <div class="ob-stat-div"></div>
-            <div class="ob-stat">
-              <div class="ob-stat-num">0</div>
-              <div class="ob-stat-label">New subscriptions</div>
-            </div>
-          </div>
-
           <div class="ob-divider"></div>
 
           <!-- Quickstart -->
-          <div class="ob-qs-label">Dispatch your first task</div>
           <div class="ob-steps">
             <div class="ob-step">
               <div class="ob-step-left">
@@ -175,7 +148,7 @@
                 <span class="ob-num">3</span>
               </div>
               <div class="ob-step-body">
-                <div class="ob-step-title">Watch 11 specialists work — inspect deliverables</div>
+                <div class="ob-step-title">Watch 11 specialists work. Inspect deliverables.</div>
                 <div class="ob-step-hint">Live DAG appears here as agents execute ↑</div>
               </div>
             </div>
@@ -293,22 +266,15 @@
 <script>
 // Inspector tab switching (referenced from HTML onclick attributes)
 function switchInspectorTab(tab) {
-  const agentPanel = document.getElementById('itab-agent');
-  const docsPanel  = document.getElementById('itab-docs');
-  const agentBtn   = document.getElementById('itab-btn-agent');
-  const docsBtn    = document.getElementById('itab-btn-docs');
-  if (!agentPanel || !docsPanel) return;
-  if (tab === 'agent') {
-    agentPanel.style.display = 'flex';
-    docsPanel.style.display  = 'none';
-    agentBtn.classList.add('active');
-    docsBtn.classList.remove('active');
-  } else {
-    docsPanel.style.display  = 'flex';
-    agentPanel.style.display = 'none';
-    docsBtn.classList.add('active');
-    agentBtn.classList.remove('active');
-  }
+  const tabs = ['agent', 'docs', 'deliverables'];
+  tabs.forEach(id => {
+    const panel = document.getElementById('itab-' + id);
+    const btn   = document.getElementById('itab-btn-' + id);
+    if (!panel || !btn) return;
+    const active = id === tab;
+    panel.style.display = active ? 'flex' : 'none';
+    btn.classList.toggle('active', active);
+  });
 }
 </script>
 <script src="app.js"></script>
