@@ -16,17 +16,29 @@ When the brief begins with `RESUME MODE`, the run already exists. Follow these r
    ```bash
    cat .claude-team/runs/<run_id>/checkpoint.json
    ```
-4. **Recreate full task checklist with pre-set statuses:**
+4. **Reconstruct workflow from checkpoint** — use `checkpoint.workflow_name` to re-load the workflow YAML:
+   ```bash
+   # Try project-local first, then global
+   cat ./workflows/<checkpoint.workflow_name>.yaml 2>/dev/null || \
+   cat ~/.claude/anton/workflows/<checkpoint.workflow_name>.yaml
+   ```
+   If `checkpoint.workflow_name` is missing (old checkpoint), query the DB:
+   ```bash
+   sqlite3 .claude-team/state.db \
+     "SELECT workflow_name FROM runs WHERE id='<run_id>';"
+   ```
+   Use the workflow YAML's `phases:` list to determine which phases come after `current_phase`.
+5. **Recreate full task checklist with pre-set statuses:**
    - `TaskCreate { subject: "Context: Scan project files" }` then immediately `TaskUpdate completed` (already done)
    - `TaskCreate { subject: "Context: External spec/ticket" }` then immediately `TaskUpdate completed` (already done)
    - For each phase in `completed_phases`: call `TaskCreate` then immediately `TaskUpdate` with `status: "completed"`
    - For `current_phase`: call `TaskCreate` — it will be set `in_progress` when dispatched
-   - For remaining phases: call `TaskCreate` (they start pending)
-5. **Dispatch loop:**
+   - For remaining phases (from workflow YAML, after `current_phase`): call `TaskCreate` (they start pending)
+6. **Dispatch loop:**
    - Skip phases in `completed_phases` entirely (do not dispatch sub-coordinator)
    - For `current_phase`: dispatch sub-coordinator with a **resume brief** (see below)
    - For remaining phases: dispatch normally per Dispatching Sub-Coordinators section
-6. **Resume brief for current_phase sub-coordinator:**
+7. **Resume brief for current_phase sub-coordinator:**
    ```
    RESUME MODE for phase <phase_id>.
    Completed agents in this phase: <list from checkpoint.completed_agents[phase_id] or empty list>
@@ -69,6 +81,7 @@ python3 -c "
 import json
 data = {
   'run_id': 'ACTUAL_RUN_ID',
+  'workflow_name': 'ACTUAL_WORKFLOW',
   'current_phase': 'planning',
   'completed_phases': [],
   'completed_agents': {}
@@ -78,7 +91,7 @@ with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
 "
 ```
 
-Replace `ACTUAL_RUN_ID` with the real run_id value.
+Replace `ACTUAL_RUN_ID` with the real run_id value and `ACTUAL_WORKFLOW` with the workflow name parsed from `pending-task.md`.
 
 ## Step: Project Context Scan (ALWAYS — no assumptions)
 

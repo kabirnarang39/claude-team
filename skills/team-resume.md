@@ -75,8 +75,25 @@ Construct a synthetic checkpoint from DB output:
 - `current_phase` = first phase with status not `completed`
 - `completed_phases` = list of phase_ids with status `completed`
 - `completed_agents` = `{}`
+- `workflow_name` = from DB `workflow_name` column
 
-Print: `Note: checkpoint.json not found — reconstructed from DB state.`
+Write the reconstructed checkpoint to disk so future resumes don't need to fall back again:
+```bash
+python3 -c "
+import json
+data = {
+  'run_id': 'ACTUAL_RUN_ID',
+  'workflow_name': 'ACTUAL_WORKFLOW',
+  'current_phase': 'ACTUAL_CURRENT_PHASE',
+  'completed_phases': ['COMPLETED_PHASE_1', 'COMPLETED_PHASE_2'],
+  'completed_agents': {}
+}
+with open('.claude-team/runs/ACTUAL_RUN_ID/checkpoint.json', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+```
+
+Print: `Note: checkpoint.json not found — reconstructed from DB state and written to disk.`
 
 #### Step 2 — Halted-reason confirmation gate
 

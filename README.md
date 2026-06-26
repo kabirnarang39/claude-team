@@ -1,6 +1,6 @@
 # Anton
 
-**I gave Claude Code a team of 11 AI specialists.**
+**I gave Claude Code a team of 12 AI specialists.**
 
 One slash command. They work in parallel. You watch them live in your browser.
 
@@ -15,12 +15,12 @@ One slash command. They work in parallel. You watch them live in your browser.
 [![Go Report Card](https://goreportcard.com/badge/github.com/kabirnarang39/claude-team)](https://goreportcard.com/report/github.com/kabirnarang39/claude-team)
 [![codecov](https://codecov.io/gh/kabirnarang39/claude-team/branch/main/graph/badge.svg)](https://codecov.io/gh/kabirnarang39/claude-team)
 
-![Parallelism](https://img.shields.io/badge/parallelism-3×_on_parallel_phases-blue)
+![Parallelism](https://img.shields.io/badge/parallelism-3×_on_engineering_phase-blue)
 ![Context isolation](https://img.shields.io/badge/context_isolation-fresh_per_agent-purple)
 
-![Anton v3 dashboard — 11 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/demo.gif)
+![Anton v3 dashboard — 12 specialist agents across 5 phases, dark-mode DAG view with live inspector](docs/demo.gif)
 
-> No Python. No new API key. No venv. Runs inside the Claude Code subscription you already have.
+> No new API key. No venv. No LangChain. Runs inside the Claude Code subscription you already have.
 
 ---
 
@@ -43,7 +43,7 @@ claude
 /team-dispatch build user auth with JWT and refresh tokens
 ```
 
-Open `http://localhost:3000` — watch 11 specialists work through planning, architecture, engineering, QA, and DevOps. Live.
+Open `http://localhost:3000` — watch 12 specialists work through planning, architecture, engineering, QA, and DevOps. Live.
 
 > **First time?** Run `anton --check` to confirm setup. Run `anton --demo` to preview the dashboard with a sample completed run — no Claude Code needed. **Browser dispatch:** Enter a task at `http://localhost:3000`, click ▶ Dispatch, paste into Claude Code.
 
@@ -51,16 +51,16 @@ Open `http://localhost:3000` — watch 11 specialists work through planning, arc
 
 ## ⚡ Speed — Parallel by default
 
-Claude Code runs one agent at a time. Anton runs 11 simultaneously.
+Claude Code runs one agent at a time. Anton runs up to 12 specialists per task.
 
-While your architect writes the ADR, three engineers tackle backend, frontend, and database in parallel. While QA writes test cases, security runs the OWASP checklist. A task that would take hours of sequential prompting completes in minutes.
+While your architect writes the ADR, three engineers tackle backend, frontend, and database in parallel. Sequential phases run in series; parallel phases run concurrently. A task that would take hours of sequential prompting completes in minutes.
 
 ```
 Phase 1 (Planning):     requirements-analyst → tech-writer
-Phase 2 (Architecture): senior-architect + api-designer (parallel)
+Phase 2 (Architecture): senior-architect → api-designer
 Phase 3 (Engineering):  backend + frontend + dba (parallel)
-Phase 4 (QA):           qa-engineer + security-reviewer + e2e-tester (parallel)
-Phase 5 (DevOps):       devops-engineer
+Phase 4 (QA):           qa-engineer → security-reviewer → e2e-tester
+Phase 5 (DevOps):       code-reviewer → devops-engineer
 ```
 
 ## 👁 Observability — Watch them work
@@ -79,9 +79,9 @@ Anton picks the cheapest model that can handle each job — you don't pay opus p
 
 | Tier | Model | Assigned to |
 |------|-------|-------------|
-| Haiku | `claude-haiku-4-5` | tech-writer, boilerplate generation, file formatting |
-| Sonnet | `claude-sonnet-4-6` | backend-engineer, frontend-engineer, dba, qa-engineer, devops-engineer |
-| Opus | `claude-opus-4-8` | senior-architect, security-reviewer, code-reviewer, debugger, incident triage |
+| Haiku | `claude-haiku-4-5-20251001` | tech-writer, requirements extraction, file formatting, boilerplate |
+| Sonnet | `claude-sonnet-4-6` | backend-engineer, frontend-engineer, dba, qa-engineer, e2e-tester, devops-engineer, performance-engineer |
+| Opus | `claude-opus-4-8` | senior-architect, api-designer, security-reviewer, code-reviewer, debugger, incident triage |
 
 If a Sonnet-tier agent returns `DONE_WITH_CONCERNS` or `BLOCKED`, Anton automatically re-dispatches on Opus before surfacing to you.
 
@@ -123,10 +123,10 @@ Anton reads `.claude-team/runs/<run_id>/checkpoint.json`, skips completed phases
 
 | What you need | What you don't need |
 |--------------|-------------------|
-| Claude Code (you have it) | Python / pip / venv |
-| Node.js 20+ | New API key |
-| Anton (one curl install) | LangChain / CrewAI |
-| | New subscription |
+| Claude Code (you have it) | New API key |
+| Node.js 20+ | LangChain / CrewAI |
+| Python 3 (checkpoint writes) | New subscription |
+| Anton (one curl install) | pip / venv / virtualenv |
 
 The workflows are plain YAML. The agent roles are plain Markdown. Read them, fork them, make them yours.
 
@@ -138,19 +138,20 @@ Anton agents produce **structured analysis and planning outputs** — every file
 
 | Agent | Produces | Example |
 |-------|----------|---------|
-| `requirements-analyst` | `acceptance-criteria.md` | 12 requirements, edge cases, user stories |
+| `requirements-analyst` | `acceptance-criteria.md` | Given/When/Then criteria, edge cases, user stories |
 | `tech-writer` | `prd.md` | Product requirements doc, scope, open questions |
 | `senior-architect` | `adr.md` | JWT vs sessions decision, Redis architecture |
-| `api-designer` | `openapi.yaml` | 5 endpoints, request/response schemas |
-| `backend-engineer` | `backend-report.md` | Implementation plan, key decisions, risks |
-| `frontend-engineer` | `frontend-report.md` | Component structure, auth flow, state handling |
-| `dba` | `dba-report.md` | Schema design, indices, migration strategy |
+| `api-designer` | `openapi.yaml` | 5 endpoints, request/response schemas (OpenAPI 3.1) |
+| `backend-engineer` | `implementation/` | Server code, tests, key decisions |
+| `frontend-engineer` | `implementation/` | UI components, auth flow, state handling |
+| `dba` | `implementation/migrations/` | Schema, indices, forward + rollback migrations |
 | `qa-engineer` | `qa-report.md` | Test cases, coverage plan, integration scenarios |
-| `security-reviewer` | `security-report.md` | OWASP checklist, findings, mitigations |
-| `e2e-tester` | `e2e-report.md` | Playwright test plan, edge cases |
-| `devops-engineer` | `devops-report.md` | Dockerfile, CI/CD, Helm chart plan |
+| `security-reviewer` | `security-report.md` | OWASP checklist, findings with CVE refs, mitigations |
+| `e2e-tester` | `implementation/tests/e2e/` | E2E test files, curl regression tests |
+| `code-reviewer` | `review-report.md` | Code quality findings, architecture conformance |
+| `devops-engineer` | `implementation/` | Dockerfile, CI/CD pipeline, Helm chart |
 
-See [`docs/examples/feature-build-user-auth/`](docs/examples/feature-build-user-auth/) for real sample outputs — all 11 agents, same task.
+See [`docs/examples/feature-build-user-auth/`](docs/examples/feature-build-user-auth/) for real sample outputs — all 12 agents, same task.
 
 ---
 
@@ -186,11 +187,11 @@ Read and fork the full prompts in [`roles/`](roles/). Add your own specialist in
 
 | Workflow | What it does | Phases | Agents |
 |----------|-------------|--------|--------|
-| `feature-build` | Full cycle: planning → architecture → engineering → QA → DevOps | 5 | 11 |
-| `code-review` | Architecture + security + quality review in parallel | 1 | 3 |
-| `bug-fix` | Root cause analysis → fix plan → verify | 2 | 3 |
-| `incident-response` | Triage → hotfix → verify → post-mortem | 3 | 4 |
-| `architecture-review` | Design doc review → ADR | 1 | 2 |
+| `feature-build` | Full cycle: planning → architecture → engineering → QA → DevOps | 5 | 12 |
+| `code-review` | Parallel review (arch + security + quality) → verdict summary | 2 | 4 |
+| `bug-fix` | Triage → parallel fix → verify | 3 | 4 |
+| `incident-response` | RCA → hotfix → verify → post-mortem | 4 | 5 |
+| `architecture-review` | Parallel review (arch + security) → ADR | 2 | 2 |
 
 Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your own](#add-a-workflow) in under 5 minutes.
 
@@ -203,7 +204,7 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 | Context per agent | starts fresh (~2–4k tokens) | grows with every turn (30k+ by turn 10) |
 | Parallel speedup | 3× on parallel phases | 1× — always sequential |
 | Response verbosity | removes filler vocabulary from agent responses | baseline |
-| Specialists per task | 7–12 | 1 |
+| Specialists per task | 2–12 depending on workflow | 1 |
 | Context isolation | each sub-agent sees only its role | shared, polluted context |
 | Human review gates | plan + architecture approval before engineers start | none |
 | Resume on crash | checkpoint per phase, `/team-resume` to continue | start over |
@@ -218,7 +219,7 @@ Each workflow is a plain YAML file in [`workflows/`](workflows/) — [add your o
 |--|-------|-------------|--------|---------|---------|
 | Runs inside Claude Code | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Uses your Claude Code subscription | ✅ | ✅ | ❌ | ❌ | ❌ |
-| No Python, no venv, no LangChain | ✅ | ✅ | ❌ | ❌ | ❌ |
+| No new API key, no venv, no LangChain | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Live browser dashboard | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Workflows in plain YAML | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
 | Agent roles in plain Markdown | ✅ | ❌ | ⚠️ code | ⚠️ code | ⚠️ code |
@@ -424,6 +425,7 @@ Usage of anton:
 
 - [Claude Code](https://claude.ai/download) — active subscription
 - Node.js 20+
+- Python 3 (used by coordinator for checkpoint writes — pre-installed on macOS and most Linux)
 - Go 1.25+ (build from source only)
 
 > **Platform support:** macOS arm64/amd64, Linux amd64. Linux arm64 (Graviton, Raspberry Pi) not yet supported — [upvote the issue](https://github.com/kabirnarang39/claude-team/issues).
