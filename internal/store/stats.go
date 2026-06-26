@@ -21,9 +21,13 @@ func (s *Store) GetStats() (Stats, error) {
 		return st, err
 	}
 
-	if err := s.db.QueryRow(
-		`SELECT COUNT(*), COALESCE(SUM(tokens_used), 0) FROM agent_results`,
-	).Scan(&st.AgentsTotal, &st.TokensTotal); err != nil {
+	if err := s.db.QueryRow(`
+		SELECT COUNT(*), COALESCE(SUM(tokens_used), 0)
+		FROM agent_results
+		WHERE id IN (
+			SELECT MAX(id) FROM agent_results GROUP BY run_id, phase_id, agent
+		)
+	`).Scan(&st.AgentsTotal, &st.TokensTotal); err != nil {
 		return st, err
 	}
 

@@ -325,11 +325,19 @@ for path in glob.glob(os.path.join(subagents_dir, 'agent-*.jsonl')):
             data = json.load(f)
         if data.get('tokens_used', 0) != 0:
             continue
+        seen_ids = set()
         total = 0
         for line in lines:
             try:
-                u = json.loads(line).get('message', {}).get('usage', {})
-                total += u.get('input_tokens', 0) + u.get('output_tokens', 0)
+                obj = json.loads(line)
+                msg = obj.get('message', {})
+                msg_id = msg.get('id')
+                if msg_id:
+                    if msg_id in seen_ids:
+                        continue
+                    seen_ids.add(msg_id)
+                u = msg.get('usage', {})
+                total += u.get('input_tokens', 0) + u.get('output_tokens', 0) + u.get('cache_creation_input_tokens', 0) + u.get('cache_read_input_tokens', 0)
             except:
                 pass
         if total > 0:
