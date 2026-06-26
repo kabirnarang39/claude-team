@@ -635,9 +635,9 @@ func TestSignalReviewInvalidGate(t *testing.T) {
 	}{
 		{"", 400},
 		{strings.Repeat("x", 129), 400},
-		{"bad-gate", 204},        // previously invalid, now accepted
-		{"agent-question", 204},  // new gate type
-		{"plan-review", 204},     // existing gate type still works
+		{"bad-gate", 204},       // previously invalid, now accepted
+		{"agent-question", 204}, // new gate type
+		{"plan-review", 204},    // existing gate type still works
 	}
 	for _, c := range cases {
 		body := `{"gate":"` + c.gate + `","summary":"test"}`
