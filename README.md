@@ -1,6 +1,6 @@
 # Anton
 
-**A 12-agent engineering workflow for Claude Code, with a live browser dashboard.**
+**Claude Code-native workflow dashboard for structured, review-heavy local agent runs.**
 
 Anton turns one Claude Code slash command into a coordinated local workflow: planning, architecture, engineering, QA/security, and DevOps. The coordinator runs inside your existing Claude Code session; the dashboard runs as a local Go server and streams agent progress from SQLite over WebSocket.
 
@@ -9,6 +9,12 @@ Anton turns one Claude Code slash command into a coordinated local workflow: pla
 ```
 
 No new Anthropic API key. No Python framework. No LangChain. Optional MCP integrations can use their own provider tokens when you configure them.
+
+![Anton demo dashboard showing a seeded workflow run, docs, and deliverables](docs/assets/anton-demo.gif)
+
+- Claude Code-native: real runs use your existing Claude Code session, not direct Anthropic API calls.
+- Inspectable by default: workflows are YAML, roles are Markdown, state is local SQLite.
+- Review-heavy flow: the default feature-build workflow uses 12 specialist roles across 5 phases.
 
 [![CI](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml/badge.svg)](https://github.com/kabirnarang39/claude-team/actions/workflows/ci.yml)
 [![Go 1.25+](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
@@ -72,7 +78,11 @@ DevOps:       code-reviewer -> devops-engineer
 
 The dashboard pre-populates the expected agents, then replaces pending placeholders as agents report results.
 
-## Why not a solo Claude Code session?
+## Why Anton?
+
+Claude Code is great at deep solo work. Anton is for the moments when you want more structure around that work: explicit phases, specialist role prompts, saved artifacts, and a local dashboard you can inspect after the terminal scrollback has moved on.
+
+Anton is also intentionally not a general agent framework. No LangChain, no AutoGen, no hosted control plane, and no separate orchestration API key. It is a small local layer around Claude Code: YAML workflows, Markdown roles, SQLite state, WebSocket updates, and a browser dashboard on localhost.
 
 | Capability | Anton | Solo session |
 | --- | --- | --- |
@@ -86,7 +96,39 @@ The dashboard pre-populates the expected agents, then replaces pending placehold
 
 The main win is not magic autonomy. It is making multi-step engineering work visible, inspectable, and repeatable.
 
-## Examples and demo proof
+## How it works
+
+```mermaid
+flowchart LR
+  A["Claude Code slash command"] --> B["Anton coordinator"]
+  B --> C["YAML workflow phases"]
+  C --> D["Markdown specialist roles"]
+  D --> E["Agent reports"]
+  E --> F["Local SQLite state"]
+  F --> G["WebSocket updates"]
+  G --> H["Browser dashboard on 127.0.0.1"]
+  E --> I[".claude-team/runs/<run_id>/ artifacts"]
+```
+
+The short demo path is:
+
+```text
+/team-dispatch build user auth with JWT and refresh tokens
+    -> dashboard shows phase and agent progress
+    -> final docs and deliverables are saved under .claude-team/runs/<run_id>/
+```
+
+## Screenshots and demo proof
+
+The screenshots below come from `anton --demo`, which seeds a local sample run so you can inspect the UI without spending Claude Code tokens. They are demo fixtures, not external user results.
+
+![Anton dashboard with phase progress and inspector summary](docs/assets/anton-dashboard.png)
+
+![Anton docs inspector showing generated PRD content](docs/assets/anton-docs.png)
+
+![Anton deliverables inspector showing files saved for the run](docs/assets/anton-deliverables.png)
+
+![Anton mobile-width dashboard preview](docs/assets/anton-mobile.png)
 
 Static examples live in [`docs/examples/`](docs/examples/):
 
@@ -95,6 +137,39 @@ Static examples live in [`docs/examples/`](docs/examples/):
 - [`bug-fix-failing-test`](docs/examples/bug-fix-failing-test/) - root cause, fix plan, and verification notes for a failing test
 
 To record a short launch demo, use [`docs/demo/recording-script.md`](docs/demo/recording-script.md). The script intentionally starts from `anton --demo` so the UI can be reviewed without spending Claude Code tokens.
+
+## Inspect the workflow
+
+The default workflow is plain YAML:
+
+```yaml
+# workflows/feature-build.yaml
+phases:
+  - id: planning
+    sequential:
+      - requirements-analyst
+      - tech-writer
+  - id: architecture
+    sequential:
+      - senior-architect
+      - api-designer
+  - id: engineering
+    parallel:
+      - backend-engineer
+      - frontend-engineer
+      - dba
+  - id: qa
+    sequential:
+      - qa-engineer
+      - security-reviewer
+      - e2e-tester
+  - id: devops
+    sequential:
+      - code-reviewer
+      - devops-engineer
+```
+
+Roles are Markdown prompts. For example, [`roles/security-reviewer.md`](roles/security-reviewer.md) requires OWASP/CVE citations, exact file references for findings, and a coverage attestation before the role reports done.
 
 ## Verified MCP presets
 
@@ -122,6 +197,18 @@ Run manual registry validation with:
 node scripts/validate-mcp-registry.mjs
 ```
 
+## Install and release assets
+
+The installer fetches the latest GitHub release and selects the matching binary for your platform:
+
+| Platform | Release asset |
+| --- | --- |
+| macOS Apple Silicon | `anton-darwin-arm64` |
+| macOS Intel | `anton-darwin-amd64` |
+| Linux amd64 | `anton-linux-amd64` |
+
+The `v1.4.5` release includes those three binaries plus `checksums.txt`.
+
 ## Files Anton writes
 
 Install writes:
@@ -147,6 +234,14 @@ Running `anton` inside a project writes:
 <project>/.claude-team/workflows/
 ```
 
+To remove project-local Anton state from a repo:
+
+```bash
+rm -rf .claude-team
+```
+
+Remove the Anton entry from `.claude/settings.json` if you also want to unregister the project MCP server.
+
 Uninstall:
 
 ```bash
@@ -154,6 +249,15 @@ curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/inst
 ```
 
 Project-local `.claude/settings.json` and `.claude-team/` data are not removed by uninstall.
+
+## What Anton does not do
+
+- It does not replace Claude Code.
+- It does not call Anthropic APIs directly.
+- It does not run a hosted control plane.
+- It does not guarantee correct code, passing tests, or safe deployments.
+- It does not make benchmark or adoption claims.
+- It does not expose the dashboard beyond `127.0.0.1` by default.
 
 ## Known limitations
 

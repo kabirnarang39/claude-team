@@ -2,6 +2,8 @@
 
 Use this to record a short launch GIF or video without relying on a live Claude Code run.
 
+The README demo GIF at `docs/assets/anton-demo.gif` was generated from the local `anton --demo` dashboard, Docs, and Deliverables views. Record a live video with the steps below when you want cursor movement and narration.
+
 ## Setup
 
 ```bash
@@ -31,3 +33,4 @@ Anton is a local coordinator for Claude Code. One slash command starts a 12-agen
 - Keep the video under 90 seconds.
 - Do not claim speed benchmarks unless a real timed run is shown.
 - Do not claim external integrations unless the relevant env vars are configured during the recording.
+- Make clear that `anton --demo` seeds local fixture data and does not represent an external user run.

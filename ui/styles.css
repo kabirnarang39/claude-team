@@ -1950,6 +1950,8 @@ html, body {
 @media (max-width: 767px) {
   .hdr {
     overflow: hidden;
+    padding: 0 16px;
+    gap: 12px;
   }
   .hdr-nav-link,
   .hdr-nav-btn,
@@ -1960,48 +1962,105 @@ html, body {
     display: none !important;
   }
   .layout {
-    grid-template-columns: 48px 1fr;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: calc(100dvh - 56px);
+  }
+  .sidebar {
+    min-width: 0;
+    min-height: 72px;
+    max-height: 84px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
   }
   .sidebar-label,
-  .ri-meta,
-  .ri-name,
   .sidebar-footer,
   .sidebar-stats {
-    display: none;
+    display: none !important;
+  }
+  .run-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 12px;
   }
   .run-item {
-    padding: 10px;
-    display: flex;
-    justify-content: center;
+    min-width: 184px;
+    margin-bottom: 0;
+    padding: 10px 12px;
+    display: block;
   }
   .ri-header {
-    margin-bottom: 0;
+    margin-bottom: 4px;
+  }
+  .ri-name {
+    display: block;
+    max-width: 130px;
+  }
+  .ri-meta {
+    display: flex;
+    padding-left: 14px;
+  }
+  .ri-delete-btn {
+    opacity: 1;
   }
   .canvas,
   .main {
     padding: 12px;
     gap: 10px;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+  #run-detail > * {
+    margin-bottom: 12px;
   }
   .dag-wrap,
   .tree-wrap {
     padding: 12px 8px;
+    overflow-x: auto;
   }
   #tree-svg {
-    width: 100% !important;
-    max-width: 100%;
+    width: auto !important;
+    min-width: 760px;
+    max-width: none;
   }
   .phase-bar {
     width: 100%;
     max-width: 100%;
     min-width: 0;
     padding: 7px 8px;
+    overflow-x: auto;
+    justify-content: flex-start;
   }
   .phase-pill {
     padding: 3px 8px;
     font-size: 9.5px;
+    flex-shrink: 0;
   }
   .phase-arrow {
     padding: 0 4px;
+    flex-shrink: 0;
+  }
+  .orch-card,
+  .phase-output,
+  .canvas-card {
+    min-width: 0;
+  }
+  .orch-approach-header {
+    align-items: flex-start;
+  }
+  .orch-chosen-badge {
+    margin-left: 0;
+    flex-shrink: 0;
+  }
+  .inspector {
+    top: 56px;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    max-width: none;
   }
 }
 
