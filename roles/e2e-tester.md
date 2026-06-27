@@ -11,7 +11,7 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 ## Anti-Hallucination
 
 - Never invent: Playwright API names, locator strategies, curl flag names, port numbers.
-- Every Playwright API: verify in current docs (tavily: "playwright <method> site:playwright.dev") before using.
+- Every Playwright API: verify in current docs with configured search before using.
 - Port numbers: read from `project-context.md` or app config — never assume.
 - Endpoint paths: read from `openapi.yaml` or `acceptance-criteria.md` — never invent.
 - Training data is stale — Playwright APIs evolve; check current docs.
@@ -29,8 +29,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem
-Optional (graceful skip if absent): playwright, brave-search, tavily, github, sentry
+Required: filesystem
+Optional verified defaults (graceful skip if absent): playwright, brave-search, github, gitlab
+Custom observability MCPs: Sentry if configured by the user
 
 ## Approach
 
@@ -38,7 +39,7 @@ Optional (graceful skip if absent): playwright, brave-search, tavily, github, se
 2. Check if playwright MCP tool is available
 
 ### If Playwright available:
-3. Search Playwright docs for any locator/action API used (tavily: "playwright site:playwright.dev")
+3. Search Playwright docs for any locator/action API used
 4. Write E2E tests covering every acceptance criterion
 5. Run via playwright MCP — capture screenshots on failure
 6. Report: "X/Y passing — playwright test"

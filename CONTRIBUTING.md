@@ -5,7 +5,7 @@
 ```bash
 git clone https://github.com/kabirnarang39/claude-team
 cd claude-team
-cd mcp && npm install && cd ..
+cd mcp && npm ci && cd ..
 go run main.go          # Anton running at http://localhost:3000
 ```
 
@@ -15,6 +15,8 @@ Run tests before opening a PR:
 
 ```bash
 go test -race ./...
+go vet ./...
+node scripts/validate-mcp-registry.mjs
 ```
 
 ## Project Layout
@@ -71,6 +73,8 @@ Roles are agent system prompts in `roles/`. Each file defines how a specialist a
 
 - One logical change per PR
 - `go test -race ./...` must pass
+- `go vet ./...` must pass
+- `node scripts/validate-mcp-registry.mjs` must pass after MCP registry changes
 - New handlers need a corresponding test in `internal/api/server_test.go`
 - Keep the dashboard vanilla JS — no build toolchain
 

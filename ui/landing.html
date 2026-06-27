@@ -470,7 +470,7 @@
   <a href="landing.html" class="nav-logo">
     <span aria-hidden="true">⚡</span>
     <span>Anton</span>
-    <span class="nav-badge">v1.4.2</span>
+    <span class="nav-badge">beta</span>
   </a>
   <div class="nav-sep"></div>
   <a href="#how" class="nav-link">How it works</a>
@@ -490,12 +490,12 @@
         Multi-agent coordinator · Claude Code
       </div>
       <h1 id="hero-heading">
-        Your Claude Code just got a team of <em>11 specialists.</em>
+        A visible 12-specialist workflow for <em>Claude Code.</em>
       </h1>
       <p class="hero-sub">
-        One slash command fires a full engineering team in parallel:
-        <strong>planner, architect, engineers, QA, security, DevOps.</strong>
-        You watch them live.
+        One slash command starts a structured local workflow:
+        <strong>planning, architecture, engineering, QA, security, DevOps.</strong>
+        You inspect the agents, files, and review gates as they run.
       </p>
       <div class="hero-actions">
         <a href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener" class="btn-primary">
@@ -529,7 +529,7 @@
 <div class="stats-wrap">
   <div class="stats-grid">
     <div class="stat reveal">
-      <div class="stat-val" data-count="11">11</div>
+      <div class="stat-val" data-count="12">12</div>
       <div class="stat-lbl">AI specialists</div>
     </div>
     <div class="stat reveal" style="transition-delay:60ms">
@@ -552,14 +552,14 @@
   <div class="section">
     <span class="eyebrow reveal">How it works</span>
     <h2 class="reveal">From task to team in one command.</h2>
-    <p class="sec-sub reveal">Anton runs entirely within Claude Code. No accounts, no new tools, no separate runtime.</p>
+    <p class="sec-sub reveal">Anton runs on your machine around your Claude Code session. The stack is plain Go, SQLite, YAML workflows, and Markdown role prompts.</p>
     <div class="how-grid">
       <div class="how-card reveal">
         <div class="how-icon">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         </div>
         <div class="how-title">Dispatch</div>
-        <div class="how-body">Type one slash command in Claude Code. Describe your task in plain English — the team handles the rest.</div>
+        <div class="how-body">Type one slash command in Claude Code. Describe the task in plain English; Anton routes it through the configured workflow.</div>
         <code class="how-code">/team-dispatch build Stripe billing</code>
       </div>
       <div class="how-arrow reveal" aria-hidden="true">
@@ -570,7 +570,7 @@
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         </div>
         <div class="how-title">Execute</div>
-        <div class="how-body">Anton dispatches 11 specialists across 5 phases. Planning runs first; engineering, QA, and security run in parallel where dependencies allow.</div>
+        <div class="how-body">Anton dispatches 12 specialists across 5 phases. Planning runs first; engineering, QA, and security run in parallel where dependencies allow.</div>
       </div>
       <div class="how-arrow reveal" style="transition-delay:80ms" aria-hidden="true">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -591,7 +591,7 @@
   <div class="pipeline-wrap">
     <div class="pipeline-head">
       <span class="eyebrow reveal">The team</span>
-      <h2 class="reveal">11 specialists. 5 phases.</h2>
+      <h2 class="reveal">12 specialists. 5 phases.</h2>
       <p class="sec-sub reveal">Each agent has a defined role, system prompt, and output format. They coordinate via a shared MCP layer: <span class="inline-code">report</span>, <span class="inline-code">ask</span>, <span class="inline-code">reply</span>.</p>
     </div>
     <div class="pipeline-scroll">
@@ -722,7 +722,7 @@
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
       </div>
       <div class="feat-title">Security built-in</div>
-      <div class="feat-body">A dedicated OWASP security reviewer runs on every task — security coverage built into every workflow.</div>
+      <div class="feat-body">The default workflow includes a dedicated security-review role. Findings are saved for review alongside QA and code-review artifacts.</div>
     </div>
 
     <div class="feat reveal" style="transition-delay:80ms">
@@ -751,13 +751,13 @@
       <span class="eyebrow-dot" aria-hidden="true"></span>
       Free &amp; open source
     </div>
-    <h2 class="reveal" style="margin-bottom:16px">Ship faster with an AI team that never sleeps.</h2>
+    <h2 class="reveal" style="margin-bottom:16px">Make Claude Code workflows visible and repeatable.</h2>
     <p class="sec-sub reveal" style="margin:0 auto 36px;text-align:center">
-      Open source, runs on your machine. No API costs beyond Claude, no accounts, no subscription.
+      Open source and local-first. Uses your Claude Code session; optional MCP tools use their own configured tokens.
     </p>
     <div class="cta-install reveal">
-      <span class="cta-label">go</span>
-      <span class="cta-cmd">install github.com/kabirnarang39/claude-team@latest</span>
+      <span class="cta-label">sh</span>
+      <span class="cta-cmd">curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | bash</span>
     </div>
     <div class="cta-btns reveal" style="transition-delay:60ms">
       <a href="https://github.com/kabirnarang39/claude-team" target="_blank" rel="noopener" class="btn-primary">
@@ -820,7 +820,7 @@ function revealOutput() {
   ];
 
   termOut.innerHTML =
-    '<div class="t-dim">⚡ Anton dispatching 11 specialists across 5 phases…</div>' +
+    '<div class="t-dim">⚡ Anton coordinating 12 specialists across 5 phases…</div>' +
     '<div style="margin-top:10px" id="phaselist"></div>';
 
   const list = document.getElementById('phaselist');

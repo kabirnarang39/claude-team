@@ -65,7 +65,7 @@ db.exec(`
 `)
 
 const server = new Server(
-  { name: 'claude-team-coordinator', version: '1.0.0' },
+  { name: 'claude-team-coordinator', version: '1.4.5' },
   { capabilities: { tools: {} } }
 )
 

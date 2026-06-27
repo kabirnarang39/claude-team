@@ -27,8 +27,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): playwright, datadog
+Required: filesystem
+Optional verified defaults: brave-search, playwright
+Custom observability MCPs: Datadog if configured by the user
 
 ## Approach
 

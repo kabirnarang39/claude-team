@@ -151,13 +151,11 @@ TaskUpdate { taskId: "<context-scan-task-id>", status: "completed" }
 TaskUpdate { taskId: "<context-external-task-id>", status: "in_progress" }
 ```
 
-Check `pending-task.md` for a Jira URL, Linear URL, Confluence URL, or local file path:
-- `https://*.atlassian.net/browse/PROJ-*` → Jira issue → call `getJiraIssue` MCP
-- `https://*.atlassian.net/wiki/*` → Confluence page → call `getConfluencePage` MCP
-- `https://linear.app/*/issue/*` → Linear issue → call Linear MCP
+Check `pending-task.md` for an external ticket/docs URL or local file path:
+- Jira, Confluence, Linear, Notion, or other project URLs → fetch only when a matching custom MCP is configured
 - File path ending in `.md`, `.txt`, `.pdf` → read via filesystem
 
-If any MCP is unavailable, skip and note "MCP unavailable — skipped" in project-context.md.
+If a matching custom MCP is unavailable, skip and note "MCP unavailable — skipped" in project-context.md.
 If no external context provided, note "No external spec" and mark task completed.
 
 Append findings to project-context.md under `## External Spec`:

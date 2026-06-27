@@ -29,8 +29,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, figma, playwright
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab, playwright
+Custom MCPs: Figma or design tools if configured by the user
 
 ## Approach
 

@@ -9,6 +9,8 @@ const state = {
   reviews: [],
 }
 
+const INSPECTOR_DOCKED_QUERY = '(min-width: 1280px)'
+
 const REVIEW_AFTER_PHASE = {
   'plan-review':            'planning',
   'task-review':            'architecture',
@@ -194,7 +196,6 @@ function updateOnboardingVisibility() {
   const hasRuns = state.runs && state.runs.length > 0
   const ob = document.getElementById('onboarding-card')
   const rd = document.getElementById('run-detail')
-  const inspector = document.getElementById('inspector')
   if (!ob || !rd) return
   if (hasRuns) {
     ob.classList.add('ob-exit')
@@ -204,7 +205,47 @@ function updateOnboardingVisibility() {
     ob.classList.remove('ob-exit')
   }
   rd.style.display = hasRuns ? 'block' : 'none'
-  if (inspector) inspector.style.display = (hasRuns && state.activeRun) ? 'flex' : 'none'
+  syncInspectorVisibility()
+}
+
+function isInspectorDocked() {
+  return window.matchMedia(INSPECTOR_DOCKED_QUERY).matches
+}
+
+function syncInspectorVisibility({ openMobile = false, reveal = false } = {}) {
+  const inspector = document.getElementById('inspector')
+  const btn = document.getElementById('hdr-inspector-btn')
+  if (!inspector) return
+
+  const hasActiveRun = Boolean(state.activeRun)
+  inspector.classList.toggle('is-hidden', !hasActiveRun)
+
+  if (!hasActiveRun) {
+    inspector.classList.remove('open', 'inspector-reveal')
+  } else if (isInspectorDocked()) {
+    inspector.classList.remove('open')
+    if (reveal) {
+      inspector.classList.remove('inspector-reveal')
+      void inspector.offsetWidth
+      inspector.classList.add('inspector-reveal')
+    }
+  } else {
+    inspector.classList.toggle('open', openMobile)
+    inspector.classList.remove('inspector-reveal')
+  }
+
+  if (btn) {
+    const isOpen = inspector.classList.contains('open')
+    btn.disabled = !hasActiveRun
+    btn.setAttribute('aria-expanded', String(isOpen))
+    btn.classList.toggle('active', isOpen)
+  }
+}
+
+function toggleInspector() {
+  const inspector = document.getElementById('inspector')
+  if (!inspector || !state.activeRun || isInspectorDocked()) return
+  syncInspectorVisibility({ openMobile: !inspector.classList.contains('open') })
 }
 
 function toggleSection(bodyId) {
@@ -498,12 +539,7 @@ async function loadRunDetail(runId) {
       titleEl.style.display = 'inline'
     }
 
-    // Show inspector
-    const insp = document.getElementById('inspector')
-    insp.style.display = 'flex'
-    insp.classList.remove('inspector-reveal')
-    void insp.offsetWidth
-    insp.classList.add('inspector-reveal')
+    syncInspectorVisibility({ reveal: true })
 
     // New: load orchestration card and phase outputs
     await renderOrchestrationCard(runId)
@@ -585,7 +621,7 @@ async function deleteRun(runId) {
     state.activeRun = null
     state.agents = []
     document.getElementById('run-detail').style.display = 'none'
-    document.getElementById('inspector').style.display = 'none'
+    syncInspectorVisibility()
   }
   renderRunHistory()
   updateOnboardingVisibility()
@@ -600,7 +636,7 @@ async function clearAllRuns() {
   state.activeRun = null
   state.agents = []
   document.getElementById('run-detail').style.display = 'none'
-  document.getElementById('inspector').style.display = 'none'
+  syncInspectorVisibility()
   renderRunHistory()
   updateOnboardingVisibility()
 }
@@ -1125,7 +1161,12 @@ async function renderOrchestrationCard(runId) {
   if (!section || !body) return
 
   try {
-    const res = await fetch(`/api/runs/${runId}/files/approach.md`)
+    const files = await listRunFiles(runId)
+    if (!files.some(f => f.name === 'approach.md')) {
+      section.style.display = 'none'
+      return
+    }
+    const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files/approach.md`)
     if (!res.ok) { section.style.display = 'none'; return }
     const data = await res.json()
     const md = data.content || ''
@@ -1235,16 +1276,23 @@ function delivItemHTML(runId, f, i) {
     </div>`
 }
 
+async function listRunFiles(runId) {
+  try {
+    const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files`)
+    if (!res.ok) return []
+    const files = await res.json()
+    return Array.isArray(files) ? files : []
+  } catch (_) {
+    return []
+  }
+}
+
 async function renderDeliverables(runId) {
   const listEl   = document.getElementById('deliverables-list')
   const emptyEl  = document.getElementById('deliverables-empty')
   if (!listEl || !emptyEl) return
 
-  let files = []
-  try {
-    const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files`)
-    if (res.ok) files = await res.json()
-  } catch (_) {}
+  const files = await listRunFiles(runId)
 
   if (!Array.isArray(files) || files.length === 0) {
     emptyEl.style.display = 'flex'
@@ -1336,19 +1384,23 @@ async function renderPhaseOutputs(runId) {
   if (!container) return
   container.innerHTML = ''
 
+  const files = await listRunFiles(runId)
+  const fileNames = new Set(files.map(f => f.name))
   const donePhasesWithFiles = state.phases.filter(p =>
-    p.status === 'done' && PHASE_FILES[p.phase_id] && PHASE_FILES[p.phase_id].length > 0
+    p.status === 'done' &&
+    PHASE_FILES[p.phase_id] &&
+    PHASE_FILES[p.phase_id].some(spec => fileNames.has(spec.file))
   )
   if (!donePhasesWithFiles.length) {
-    await renderDocInspector(runId)
+    await renderDocInspector(runId, files)
     return
   }
 
   for (const phase of donePhasesWithFiles) {
-    const fileSpecs = PHASE_FILES[phase.phase_id]
+    const fileSpecs = PHASE_FILES[phase.phase_id].filter(spec => fileNames.has(spec.file))
     for (const spec of fileSpecs) {
       try {
-        const res = await fetch(`/api/runs/${runId}/files/${encodeURIComponent(spec.file)}`)
+        const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files/${encodeURIComponent(spec.file)}`)
         if (!res.ok) continue
         const data = await res.json()
         if (!data.content || !data.content.trim()) continue
@@ -1376,7 +1428,7 @@ async function renderPhaseOutputs(runId) {
   }
 
   // Also populate inspector docs tab
-  await renderDocInspector(runId)
+  await renderDocInspector(runId, files)
 }
 
 function togglePhaseOutput(bodyId, chevronId) {
@@ -1414,7 +1466,7 @@ function badgesForPhase(phaseId, content) {
 }
 
 // ── Inspector Docs tab ────────────────────────────────────────────────────────
-async function renderDocInspector(runId) {
+async function renderDocInspector(runId, listedFiles) {
   const tabsEl = document.getElementById('doc-phase-tabs')
   const viewerEl = document.getElementById('doc-viewer')
   const emptyEl = document.getElementById('docs-empty')
@@ -1422,14 +1474,18 @@ async function renderDocInspector(runId) {
 
   // Collect available phase files
   const available = []
+  const files = listedFiles || await listRunFiles(runId)
+  const fileNames = new Set(files.map(f => f.name))
   const donePhasesWithFiles = state.phases.filter(p =>
-    p.status === 'done' && PHASE_FILES[p.phase_id] && PHASE_FILES[p.phase_id].length > 0
+    p.status === 'done' &&
+    PHASE_FILES[p.phase_id] &&
+    PHASE_FILES[p.phase_id].some(spec => fileNames.has(spec.file))
   )
 
   for (const phase of donePhasesWithFiles) {
-    for (const spec of PHASE_FILES[phase.phase_id]) {
+    for (const spec of PHASE_FILES[phase.phase_id].filter(spec => fileNames.has(spec.file))) {
       try {
-        const res = await fetch(`/api/runs/${runId}/files/${encodeURIComponent(spec.file)}`)
+        const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/files/${encodeURIComponent(spec.file)}`)
         if (!res.ok) continue
         const data = await res.json()
         if (!data.content || !data.content.trim()) continue
@@ -1583,4 +1639,5 @@ function friendlyRunName(run) {
   return wf.replace(/^demo-/, '').replace(/-\d{9,}$/, '').replace(/-/g, ' ')
 }
 
+window.addEventListener('resize', () => syncInspectorVisibility())
 document.addEventListener('DOMContentLoaded', init)

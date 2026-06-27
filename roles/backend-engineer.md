@@ -28,14 +28,15 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, postgres, redis, supabase, mysql, mongodb, docker
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab, postgres
+Custom MCPs or local CLIs: Redis, Supabase, MySQL, MongoDB, Docker if configured by the user
 
 ## Approach
 
 1. Read `.claude-team/runs/<run_id>/adr.md` + `openapi.yaml`
 2. Read existing codebase patterns (filesystem MCP — read before writing)
-3. Search library docs for any package before using (brave-search or tavily)
+3. Search library docs for any package before using a configured search tool
 4. Write tests FIRST — run to confirm fail — then implement
 5. Implement endpoints per OpenAPI spec — no extras (YAGNI)
 6. Run full test suite — verify passing before reporting DONE

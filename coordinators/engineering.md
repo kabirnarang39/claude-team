@@ -47,7 +47,7 @@ On entry (before dispatching any agent):
 ```bash
 curl -s -X POST http://localhost:3000/api/agent-config \
   -H "Content-Type: application/json" \
-  -d '{"mcps":["filesystem","brave-search","tavily","github","figma","postgres","redis","supabase","mysql","mongodb","docker"]}' > /dev/null
+  -d '{"mcps":["filesystem","brave-search","github","gitlab","postgres","playwright"]}' > /dev/null
 ```
 
 **Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json — get `completed_agents.architecture` and `completed_agents.engineering` lists.
@@ -109,10 +109,10 @@ Context read order:
 Outputs:
   .claude-team/runs/<run_id>/adr.md
   .claude-team/runs/<run_id>/architecture.md
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github, figma, google-drive
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab
+Custom MCPs: design/docs tools if configured by the user
 Output destination: <output_destination>
-If Confluence: write locally AND sync to Confluence space <confluence_space>.
+If external docs sync is requested: write locally AND sync only when a matching custom MCP is configured.
 Write fallback JSON to .claude-team/runs/<run_id>/report-senior-architect.json
 Report via coordinator MCP `report` tool before exiting.
 ```
@@ -182,8 +182,8 @@ Context read order:
   4. .claude-team/runs/<run_id>/architecture.md
   5. Existing API patterns in codebase (filesystem MCP — read before designing)
 Output: .claude-team/runs/<run_id>/openapi.yaml
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github, atlassian-rovo
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab
+Custom MCPs: ticket/docs tools if configured by the user
 Write fallback JSON to .claude-team/runs/<run_id>/report-api-designer.json
 Report via coordinator MCP `report` tool before exiting.
 ```
@@ -281,8 +281,8 @@ Context read order:
   5. .claude-team/runs/<run_id>/acceptance-criteria.md
   6. Existing codebase (filesystem MCP — match conventions before writing)
 Outputs: .claude-team/runs/<run_id>/implementation/ (server-side code)
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github, postgres, redis, supabase, mysql, mongodb, docker
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, postgres
+Custom MCPs or local CLIs: Redis, Supabase, MySQL, MongoDB, Docker if configured by the user
 Write fallback JSON to .claude-team/runs/<run_id>/report-backend-engineer.json
 Report via coordinator MCP `report` tool before exiting.
 ```
@@ -300,8 +300,8 @@ Context read order:
   5. .claude-team/runs/<run_id>/acceptance-criteria.md
   6. Existing UI components (filesystem MCP — match style before writing)
 Outputs: .claude-team/runs/<run_id>/implementation/ (client-side code)
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github, figma, playwright
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, playwright
+Custom MCPs: design tools if configured by the user
 Write fallback JSON to .claude-team/runs/<run_id>/report-frontend-engineer.json
 Report via coordinator MCP `report` tool before exiting.
 ```
@@ -317,8 +317,8 @@ Context read order:
   3. .claude-team/runs/<run_id>/adr.md (schema section)
   4. Existing migration files (filesystem MCP — match numbering convention)
 Outputs: .claude-team/runs/<run_id>/implementation/migrations/
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github, postgres, mysql, mongodb, redis
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, postgres
+Custom MCPs or local CLIs: MySQL, MongoDB, Redis if configured by the user
 Write fallback JSON to .claude-team/runs/<run_id>/report-dba.json
 Report via coordinator MCP `report` tool before exiting.
 ```

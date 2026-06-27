@@ -1,7 +1,7 @@
 ---
 name: anton
-description: Anton — multi-agent engineering team coordinator. Runs planning, architecture, engineering, QA, and DevOps agents in sequence using Claude Code's Agent tool. Anti-hallucination by design. Search-first. No AppleScript. No terminal windows.
-version: 1.0.0
+description: Anton — multi-agent engineering team coordinator. Runs planning, architecture, engineering, QA, and DevOps agents in sequence using Claude Code's Agent tool. Anti-hallucination by design. Read-first, search when configured. No AppleScript. No terminal windows.
+version: 1.4.5
 skills:
   - team-dispatch
   - team-status
@@ -37,12 +37,12 @@ Anton runs a full engineering team as sub-agents — no OS terminals, no AppleSc
 ## Quick start
 
 ```bash
-# 1. Install MCP deps
-cd mcp && npm install && cd ..
+# 1. Install Anton
+curl -fsSL https://raw.githubusercontent.com/kabirnarang39/claude-team/main/install.sh | bash
 
-# 2. Start dashboard
-go run main.go
-# → Anton running at http://localhost:3000
+# 2. Verify setup and start dashboard
+anton --check
+anton
 
 # 3. Dispatch a task (in Claude Code)
 /team-dispatch build user authentication with JWT and refresh tokens
@@ -76,8 +76,8 @@ User → /team-dispatch skill → Main Coordinator (Claude Code session)
 
 ## Engineering standards (all agents)
 
-All 14 specialist agents enforce:
-1. Search-first (brave-search + tavily mandatory)
+All 15 reusable specialist role prompts enforce:
+1. Read-first, then use configured search when current external facts are needed
 2. Ask-before-assume (never guess requirements)
 3. Anti-bias (cite sources for all recommendations)
 4. Anti-hallucination (no invented APIs or packages)

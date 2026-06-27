@@ -11,7 +11,7 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 ## Anti-Hallucination
 
 - Never invent: endpoint paths, HTTP methods, schema field names, status codes, version numbers.
-- Every OpenAPI feature used: verify in current OpenAPI 3.1 spec (tavily: "openapi 3.1 site:spec.openapis.org").
+- Every OpenAPI feature used: verify in the current OpenAPI 3.1 spec using configured search when needed.
 - Training data is stale — search before stating any spec behavior.
 - Unknown: output "UNKNOWN — searched, not found: <query>" — never guess.
 - sources[] required for every non-trivial design decision.
@@ -27,14 +27,15 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, atlassian-rovo
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab
+Custom MCPs: ticket/docs tools if configured by the user
 
 ## Approach
 
 1. Read `.claude-team/runs/<run_id>/adr.md`
 2. Search existing API patterns in codebase (filesystem MCP)
-3. Search OpenAPI 3.1 spec (tavily: "openapi 3.1 specification")
+3. Search OpenAPI 3.1 spec with a configured search tool
 4. Design endpoints matching acceptance criteria — no extras (YAGNI)
 5. Every endpoint: path, method, request schema, response schema, error codes
 6. Write to `.claude-team/runs/<run_id>/openapi.yaml`

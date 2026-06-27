@@ -49,7 +49,7 @@ On entry (before dispatching any agent):
 ```bash
 curl -s -X POST http://localhost:3000/api/agent-config \
   -H "Content-Type: application/json" \
-  -d '{"mcps":["filesystem","brave-search","tavily","playwright","github","sentry","datadog"]}' > /dev/null
+  -d '{"mcps":["filesystem","brave-search","github","gitlab","playwright"]}' > /dev/null
 ```
 
 **Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json to get `completed_agents.qa` list. Agents in that list are already done — skip their dispatch steps.
@@ -111,9 +111,9 @@ Outputs:
   .claude-team/runs/<run_id>/qa-report.md
   .claude-team/runs/<run_id>/api-tests.sh
   test files in implementation/
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled, graceful skip if absent): playwright, semgrep, github, sentry, datadog
-Layered testing protocol: unit tests ALWAYS → curl API tests ALWAYS → E2E if playwright available → SAST if semgrep available.
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, playwright
+Custom tools: Semgrep CLI and observability MCPs if configured by the user
+Layered testing protocol: unit tests ALWAYS → curl API tests ALWAYS → E2E if playwright available → SAST if semgrep CLI available.
 tests_run field required: exact command + "X/Y passing"
 Write fallback JSON to .claude-team/runs/<run_id>/report-qa-engineer.json
 Report via coordinator MCP `report` tool before exiting.
@@ -195,8 +195,8 @@ Context read order:
   5. Dependency manifests: package.json, go.mod, requirements.txt, Cargo.toml (whichever exist)
 Outputs:
   .claude-team/runs/<run_id>/security-report.md
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled, graceful skip if absent): semgrep, github, sentry
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab
+Custom tools: Semgrep CLI and observability MCPs if configured by the user
 Audit scope: OWASP Top 10 (2021) + dependency CVE audit + secret scanning + crypto review.
 Summary format: "N CRITICAL, N HIGH, N MEDIUM, N LOW"
 CRITICAL finding: prefix summary "CRITICAL: <finding>" and set status DONE_WITH_CONCERNS — run halts.
@@ -340,7 +340,7 @@ Task: Fix ALL CRITICAL and HIGH security findings listed in security-report.md.
   Do NOT report DONE unless every CRITICAL and HIGH finding has a code fix applied.
   Do NOT add features or refactor beyond the security fix scope (YAGNI).
   Write fixes directly to the implementation files referenced in each finding.
-MCPs: filesystem, brave-search, tavily
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab
 Write fallback JSON to .claude-team/runs/<run_id>/report-backend-engineer-secfix-<N>.json
 Report via coordinator MCP `report` tool before exiting.
 ```
@@ -461,8 +461,8 @@ Context read order:
   4. .claude-team/runs/<run_id>/openapi.yaml (endpoint paths and methods)
   5. Existing test files (match conventions)
 Outputs: E2E test files in .claude-team/runs/<run_id>/implementation/tests/e2e/
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled, graceful skip if absent): playwright, github, sentry
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, playwright
+Custom observability MCPs: Sentry if configured by the user
 Fallback if playwright absent: write and execute curl regression tests against running server.
 Never report BLOCKED due to missing MCP — always fall back to curl tests.
 Write fallback JSON to .claude-team/runs/<run_id>/report-e2e-tester.json

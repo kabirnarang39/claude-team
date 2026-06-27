@@ -27,15 +27,11 @@ func WriteAgentConfig(configDir string, registry *Registry, mcpNames []string) e
 		if !ok {
 			continue
 		}
-		env := make(map[string]string, len(entry.Env))
-		for k, v := range entry.Env {
-			env[k] = expandVar(v)
+		server, ok := buildServer(entry)
+		if !ok {
+			continue
 		}
-		settings.MCPServers[name] = mcpServer{
-			Command: entry.Command,
-			Args:    expandArgs(entry.Args),
-			Env:     env,
-		}
+		settings.MCPServers[name] = server
 	}
 
 	settings.MCPServers["coordinator"] = mcpServer{
@@ -54,19 +50,36 @@ func WriteAgentConfig(configDir string, registry *Registry, mcpNames []string) e
 	return os.WriteFile(configDir+"/settings.json", data, 0644)
 }
 
-func expandVar(v string) string {
+func expandTemplate(v string) (string, bool) {
 	if strings.HasPrefix(v, "${") && strings.HasSuffix(v, "}") {
-		return os.Getenv(v[2 : len(v)-1])
+		value := os.Getenv(v[2 : len(v)-1])
+		return value, value != ""
 	}
-	return v
+	return v, true
 }
 
-func expandArgs(args []string) []string {
-	result := make([]string, len(args))
-	for i, a := range args {
-		result[i] = expandVar(a)
+func buildServer(entry MCPEntry) (mcpServer, bool) {
+	result := make([]string, len(entry.Args))
+	for i, a := range entry.Args {
+		value, ok := expandTemplate(a)
+		if !ok {
+			return mcpServer{}, false
+		}
+		result[i] = value
 	}
-	return result
+
+	var env map[string]string
+	if len(entry.Env) > 0 {
+		env = make(map[string]string, len(entry.Env))
+		for k, v := range entry.Env {
+			value, ok := expandTemplate(v)
+			if !ok {
+				return mcpServer{}, false
+			}
+			env[k] = value
+		}
+	}
+	return mcpServer{Command: entry.Command, Args: result, Env: env}, true
 }
 
 // WriteProjectMCPs merges selected MCP entries (plus the coordinator) into
@@ -96,22 +109,16 @@ func WriteProjectMCPs(claudeDir, coordinatorJS, dbPath string, registry *Registr
 	}
 
 	for _, name := range mcpNames {
+		delete(servers, name)
 		entry, ok := registry.MCPs[name]
 		if !ok {
 			continue
 		}
-		var env map[string]string
-		if len(entry.Env) > 0 {
-			env = make(map[string]string, len(entry.Env))
-			for k, v := range entry.Env {
-				env[k] = expandVar(v)
-			}
+		server, ok := buildServer(entry)
+		if !ok {
+			continue
 		}
-		servers[name] = mcpServer{
-			Command: entry.Command,
-			Args:    expandArgs(entry.Args),
-			Env:     env,
-		}
+		servers[name] = server
 	}
 
 	merged, err := json.Marshal(servers)

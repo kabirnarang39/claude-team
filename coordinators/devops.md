@@ -38,7 +38,7 @@ On entry (before dispatching any agent):
 ```bash
 curl -s -X POST http://localhost:3000/api/agent-config \
   -H "Content-Type: application/json" \
-  -d '{"mcps":["filesystem","brave-search","tavily","github","docker","vercel","cloudflare","aws","datadog","sentry"]}' > /dev/null
+  -d '{"mcps":["filesystem","brave-search","github","gitlab","slack"]}' > /dev/null
 ```
 
 **Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json to get `completed_agents.devops` list. Agents in that list are already done — skip their dispatch steps.
@@ -95,8 +95,7 @@ Context read order:
   5. Security/QA reports (read findings before reviewing — avoid duplicate reports)
 Input: .claude-team/runs/<run_id>/implementation/ (full changeset)
 Output: .claude-team/runs/<run_id>/review-report.md
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab
 Summary must include: "X critical, Y important, Z minor findings"
 Write fallback JSON to .claude-team/runs/<run_id>/report-code-reviewer.json
 Report via coordinator MCP `report` tool before exiting.
@@ -167,8 +166,8 @@ Context read order:
   6. .claude-team/runs/<run_id>/implementation/ (know what to build/deploy)
 Accepted risks: read checkpoint.json `accepted_risks[]` — include each one in a WARN block in your deployment notes so the operator is aware before deploying.
 Outputs: CI/CD config files in .claude-team/runs/<run_id>/implementation/
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): github, docker, vercel, cloudflare, aws, datadog, sentry
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, slack
+Custom MCPs or local CLIs: Docker, Vercel, Cloudflare, AWS, Datadog, Sentry if configured by the user
 Pin all action versions — search current version before pinning, no @latest.
 Write fallback JSON to .claude-team/runs/<run_id>/report-devops-engineer.json
 Report via coordinator MCP `report` tool before exiting.

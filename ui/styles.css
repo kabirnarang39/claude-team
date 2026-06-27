@@ -195,6 +195,15 @@ html, body {
   background: rgba(255,255,255,0.08);
   color: #fff;
 }
+.hdr-inspector-btn.active {
+  background: rgba(102,217,239,0.12);
+  border-color: rgba(102,217,239,0.35);
+  color: var(--accent);
+}
+.hdr-inspector-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* WS wrapper */
 .ws {
@@ -1334,6 +1343,9 @@ html, body {
   flex-direction: column;
   overflow: hidden;
 }
+.inspector.is-hidden {
+  display: none;
+}
 
 /* Inspector tab bar */
 .inspector-tabs {
@@ -1936,6 +1948,17 @@ html, body {
 }
 
 @media (max-width: 767px) {
+  .hdr {
+    overflow: hidden;
+  }
+  .hdr-nav-link,
+  .hdr-nav-btn,
+  .ws {
+    display: none;
+  }
+  .hdr-run-title {
+    display: none !important;
+  }
   .layout {
     grid-template-columns: 48px 1fr;
   }
@@ -1962,6 +1985,23 @@ html, body {
   .dag-wrap,
   .tree-wrap {
     padding: 12px 8px;
+  }
+  #tree-svg {
+    width: 100% !important;
+    max-width: 100%;
+  }
+  .phase-bar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 7px 8px;
+  }
+  .phase-pill {
+    padding: 3px 8px;
+    font-size: 9.5px;
+  }
+  .phase-arrow {
+    padding: 0 4px;
   }
 }
 

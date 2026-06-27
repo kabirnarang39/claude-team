@@ -28,8 +28,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, postgres, mysql, mongodb, redis
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab, postgres
+Custom MCPs or local CLIs: MySQL, MongoDB, Redis if configured by the user
 
 ## Approach
 

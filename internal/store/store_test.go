@@ -47,6 +47,20 @@ func TestRunCRUD(t *testing.T) {
 	if statuses["manager"] != "running" {
 		t.Errorf("got status %q, want running", statuses["manager"])
 	}
+
+	if err := s.CompleteRun(id); err != nil {
+		t.Fatal(err)
+	}
+	detail, err := s.GetRunDetail(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail.Status != "done" {
+		t.Errorf("run status = %q, want done", detail.Status)
+	}
+	if detail.CompletedAt == 0 {
+		t.Error("completed_at should be set")
+	}
 }
 
 func openTestStore(t *testing.T) *store.Store {

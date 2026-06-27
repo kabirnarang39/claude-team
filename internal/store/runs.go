@@ -281,6 +281,14 @@ func (s *Store) CreateRunWithID(id, workflowName string) error {
 	return err
 }
 
+func (s *Store) CompleteRun(id string) error {
+	_, err := s.db.Exec(
+		`UPDATE runs SET status='done', completed_at=? WHERE id=?`,
+		time.Now().Unix(), id,
+	)
+	return err
+}
+
 // PrePopulateAgents inserts PENDING placeholder rows for all expected agents.
 // GetRunDetail deduplicates via MAX(id) per (phase_id, agent), so a later DONE
 // row from the real agent automatically supersedes the PENDING placeholder.

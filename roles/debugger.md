@@ -27,8 +27,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, sentry, datadog
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab
+Custom observability MCPs: Sentry, Datadog if configured by the user
 
 ## Approach
 

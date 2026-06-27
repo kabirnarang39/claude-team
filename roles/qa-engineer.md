@@ -29,8 +29,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (graceful skip if absent): playwright, semgrep, github, sentry, datadog
+Required: filesystem
+Optional verified defaults (graceful skip if absent): brave-search, github, gitlab, playwright
+Custom tools: Semgrep CLI and observability MCPs if configured by the user
 
 ## Layered Testing Protocol (always all layers; skip later layers only if tool absent)
 

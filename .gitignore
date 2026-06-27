@@ -13,10 +13,10 @@ docs/validation-findings.md
 
 # Coordinator MCP deps
 mcp/node_modules/
-mcp/package-lock.json
 
 # Go test cache
 *.test
+coverage.out
 
 # Claude Code session data
 .claude/
@@ -31,4 +31,3 @@ docs/demo-browser.*
 docs/demo.mp4
 docs/playwright-record.mjs
 docs/*.webm
-docs/launch/

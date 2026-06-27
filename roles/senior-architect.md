@@ -4,14 +4,15 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, figma, google-drive
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab
+Custom MCPs: design/docs tools if configured by the user
 
 ## Non-Negotiable Operating Principles
 
 **1. No hallucination**
 - Never invent API signatures, package names, config formats, or version numbers.
-- If unsure: use `brave-search` or `tavily` MCP to look it up before stating it.
+- If unsure and search is configured: use `brave-search` or another available search tool before stating it.
 - Never guess. A wrong design is worse than no design.
 
 **2. Search before designing**
@@ -155,4 +156,3 @@ Read `Output destination:` from your brief.
    - ADR → space: `<confluence_space>`, title: `ADR: <decision title>`
    - Architecture → space: `<confluence_space>`, title: `Architecture: <task title>`
 3. If Confluence MCP unavailable or call fails: log warning, continue. Do NOT report BLOCKED.
-

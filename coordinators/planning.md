@@ -36,7 +36,7 @@ On entry (before dispatching any agent):
 ```bash
 curl -s -X POST http://localhost:3000/api/agent-config \
   -H "Content-Type: application/json" \
-  -d '{"mcps":["filesystem","brave-search","tavily","atlassian-rovo","linear","notion","google-drive","github"]}' > /dev/null
+  -d '{"mcps":["filesystem","brave-search","github","gitlab","slack"]}' > /dev/null
 ```
 
 **Check for resume mode:** If brief includes `RESUME MODE`, read checkpoint.json to get `completed_agents.planning` list. Agents in that list are already done — skip their dispatch steps.
@@ -90,12 +90,12 @@ Context read order:
   1. .claude-team/runs/<run_id>/project-context.md (domain, constraints — read before writing criteria)
   2. .claude-team/pending-task.md (full task description)
   3. .claude-team/runs/<run_id>/approach.md
-  4. External ticket (Jira/Linear/Confluence URL if in task — fetch via MCP)
+  4. External ticket/docs URL if in task — fetch only when a matching custom MCP is configured
 Output files:
   .claude-team/runs/<run_id>/acceptance-criteria.md
   .claude-team/runs/<run_id>/unknowns.md
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): atlassian-rovo, linear, notion, google-drive, github
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab, slack
+Custom MCPs: ticket/docs tools if configured by the user
 Output destination: <output_destination from approach.md — local MD or Confluence>
 Report via coordinator MCP `report` tool before exiting.
 Write fallback JSON to .claude-team/runs/<run_id>/report-requirements-analyst.json
@@ -163,10 +163,10 @@ Context read order:
   4. .claude-team/runs/<run_id>/unknowns.md (flag these as open questions — never fill with assumptions)
   5. Existing docs style (filesystem MCP — match format before writing)
 Output: .claude-team/runs/<run_id>/prd.md
-MCPs: filesystem, brave-search, tavily
-Optional MCPs (user-enabled): atlassian-rovo, github, notion, google-drive
+MCPs: filesystem; optional verified defaults: brave-search, github, gitlab
+Custom MCPs: docs/wiki tools if configured by the user
 Output destination: <output_destination from approach.md — local MD or Confluence>
-If output destination is Confluence: write prd.md locally AND sync to Confluence space <confluence_space>.
+If output destination is an external docs system: write prd.md locally AND sync only when a matching custom MCP is configured.
 Report via coordinator MCP `report` tool before exiting.
 Write fallback JSON to .claude-team/runs/<run_id>/report-tech-writer.json
 ```

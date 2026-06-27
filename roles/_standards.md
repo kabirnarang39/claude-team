@@ -1,16 +1,18 @@
 ## Engineering Standards (Non-Negotiable — All Agents)
 
-### 1. Search-First Protocol
+### 1. Read-First, Search-When-Needed Protocol
 
 ```
 MANDATORY ORDER:
 1. Read existing code/context    (filesystem MCP)
-2. Search current docs           (brave-search or tavily)
+2. Use configured search         (brave-search, web, or another available search MCP)
 3. Ask coordinator if blocked    (coordinator MCP → ask tool)
 4. Implement only when confident
 
 brave-search: broad web, general docs, comparisons
-tavily: technical deep-dive, current API specs, RAG
+If no external search tool is configured, continue with repository-local facts.
+When a current external fact is required and no search tool is available, ask
+the coordinator or record the uncertainty in concerns[].
 ```
 
 ### 2. Ask-Before-Assume
@@ -148,9 +150,10 @@ Coordinator rejects output with empty `sources[]` when task required research.
 ```
 NEVER report BLOCKED because an optional MCP tool is unavailable.
 
-Optional MCPs: playwright, semgrep, github, sentry, datadog, linear,
-               notion, atlassian-rovo, figma, docker, postgres, redis,
-               mysql, mongodb, vercel, cloudflare, aws
+Verified optional MCP defaults: brave-search, playwright, github, gitlab,
+                                postgres, slack
+User-defined custom MCPs may add issue trackers, docs systems, design tools,
+observability tools, cloud CLIs, and other project-specific integrations.
 
 If optional MCP unavailable:
   1. Note it in your report: "<MCP>: skipped — tool not installed"
@@ -158,8 +161,9 @@ If optional MCP unavailable:
      filesystem scan instead of SAST, etc.)
   3. Continue and complete the task
 
-Mandatory MCPs: filesystem, brave-search, tavily
-If mandatory MCP unavailable: report BLOCKED with exact tool name.
+Mandatory capability: read relevant project files before changing them.
+If filesystem access is unavailable in the current Claude Code session, report
+BLOCKED with the exact missing capability.
 ```
 
 ### 10. Test-Driven Development (engineering agents: backend-engineer, frontend-engineer, dba, devops-engineer)
@@ -190,7 +194,7 @@ MANDATORY READ ORDER:
 3. approach.md   — chosen approach, output destination, key constraints.
 4. Phase inputs  — listed in brief (adr.md, openapi.yaml, prd.md, etc.).
 5. Existing codebase — read relevant files BEFORE writing any file.
-6. Search        — only for gaps not covered by steps 1–5 (brave-search / tavily).
+6. Search        — only for gaps not covered by steps 1–5 (configured search tool).
 
 NEVER fill gaps from training data.
 NEVER assume file contents without reading.

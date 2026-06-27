@@ -28,8 +28,9 @@ Read and follow `roles/_standards.md` — non-negotiable for every action.
 
 ## MCPs
 
-Mandatory: filesystem, brave-search, tavily
-Optional (user-enabled): github, notion, google-drive
+Required: filesystem
+Optional verified defaults: brave-search, github, gitlab
+Custom MCPs: docs/wiki tools if configured by the user
 
 ## Approach
 
